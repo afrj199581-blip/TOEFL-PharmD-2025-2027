@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no">
+
+<title>TOEFL | Pharm D 2025-2027</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    min-height: 100%;
+}
+
+body {
+
+    font-family: Arial, Helvetica, sans-serif;
+
+    background-image:
+        linear-gradient(
+            rgba(0, 30, 35, 0.12),
+            rgba(0, 30, 35, 0.12)
+        ),
+        url("background.png");
+
+    background-size: cover;
+
+    background-position: center top;
+
+    background-attachment: fixed;
+
+    min-height: 100vh;
+
+    overflow-x: hidden;
+
+    color: #073b3a;
+}
+
+
+/* الصفحة */
+
+.container {
+
+    width: 100%;
+
+    min-height: 100vh;
+
+    padding: 20px 12px 30px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+}
+
+
+/* العنوان */
+
+.header {
+
+    width: 100%;
+
+    max-width: 500px;
+
+    text-align: center;
+
+    margin-top: 20px;
+
+    margin-bottom: 18px;
+
+    padding: 15px 10px;
+
+}
+
+
+/* TOEFL */
+
+.title {
+
+    font-size: clamp(42px, 13vw, 68px);
+
+    font-weight: 900;
+
+    letter-spacing: 2px;
+
+    color: #063f3d;
+
+    text-shadow:
+        2px 2px 0px rgba(255,255,255,0.7);
+
+}
+
+
+/* Interactive Exams */
+
+.subtitle {
+
+    font-size: clamp(20px, 6vw, 30px);
+
+    font-weight: 700;
+
+    color: #073b3a;
+
+    margin-top: -5px;
+
+}
+
+
+/* Pharm D */
+
+.pharm {
+
+    display: inline-block;
+
+    margin-top: 15px;
+
+    padding: 10px 25px;
+
+    border-radius: 30px;
+
+    background: #063f3d;
+
+    color: white;
+
+    font-size: clamp(16px, 4.5vw, 22px);
+
+    font-weight: bold;
+
+}
+
+
+/* الجملة */
+
+.quote {
+
+    margin-top: 12px;
+
+    font-size: 15px;
+
+    font-style: italic;
+
+    color: white;
+
+    text-shadow: 1px 1px 4px #000;
+
+}
+
+
+/* الأربع امتحانات */
+
+.exam-grid {
+
+    width: 100%;
+
+    max-width: 500px;
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 14px;
+
+    margin-top: 10px;
+
+}
+
+
+/* كارت الامتحان */
+
+.exam-card {
+
+    min-height: 175px;
+
+    border-radius: 24px;
+
+    padding: 15px 10px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    text-align: center;
+
+    text-decoration: none;
+
+    color: #073b3a;
+
+    border: 2px solid rgba(255,255,255,0.8);
+
+    box-shadow:
+
+        0 8px 20px rgba(0,0,0,0.25),
+
+        inset 0 0 20px rgba(255,255,255,0.25);
+
+    backdrop-filter: blur(4px);
+
+    -webkit-backdrop-filter: blur(4px);
+
+    transition: 0.2s;
+
+}
+
+
+/* ألوان الكروت */
+
+.mock {
+
+    background: rgba(210, 232, 255, 0.93);
+
+}
+
+.exam2 {
+
+    background: rgba(213, 245, 231, 0.93);
+
+}
+
+.exam3 {
+
+    background: rgba(255, 230, 190, 0.93);
+
+}
+
+.exam4 {
+
+    background: rgba(255, 210, 225, 0.93);
+
+}
+
+
+/* تأثير الضغط */
+
+.exam-card:active {
+
+    transform: scale(0.96);
+
+}
+
+
+/* رقم الامتحان */
+
+.number {
+
+    width: 100%;
+
+    text-align: right;
+
+    font-size: 28px;
+
+    font-weight: 900;
+
+    opacity: 0.35;
+
+}
+
+
+/* الأيقونة */
+
+.icon {
+
+    font-size: 50px;
+
+    line-height: 1;
+
+    margin-top: -8px;
+
+}
+
+
+/* اسم الامتحان */
+
+.exam-name {
+
+    font-size: 20px;
+
+    font-weight: 900;
+
+    line-height: 1.15;
+
+}
+
+
+/* زر الدخول */
+
+.start {
+
+    width: 90%;
+
+    padding: 10px 5px;
+
+    border-radius: 25px;
+
+    color: white;
+
+    font-size: 15px;
+
+    font-weight: bold;
+
+    margin-top: 10px;
+
+}
+
+
+/* ألوان الأزرار */
+
+.mock .start {
+
+    background: #1976d2;
+
+}
+
+.exam2 .start {
+
+    background: #07966f;
+
+}
+
+.exam3 .start {
+
+    background: #c96b0c;
+
+}
+
+.exam4 .start {
+
+    background: #9b245d;
+
+}
+
+
+/* للموبايلات الصغيرة */
+
+@media (max-width: 380px) {
+
+    .exam-grid {
+
+        gap: 10px;
+
+    }
+
+    .exam-card {
+
+        min-height: 160px;
+
+        padding: 12px 7px;
+
+    }
+
+    .exam-name {
+
+        font-size: 17px;
+
+    }
+
+    .icon {
+
+        font-size: 43px;
+
+    }
+
+    .start {
+
+        font-size: 13px;
+
+    }
+
+}
+
+
+/* الشاشات الكبيرة */
+
+@media (min-width: 700px) {
+
+    .container {
+
+        max-width: 600px;
+
+        margin: auto;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <!-- العنوان -->
+
+    <div class="header">
+
+        <div class="title">
+            TOEFL
+        </div>
+
+        <div class="subtitle">
+            Interactive Exams
+        </div>
+
+        <div class="pharm">
+            🎓 Pharm D 2025 - 2027
+        </div>
+
+        <div class="quote">
+            "Small steps today, a brighter tomorrow" ♡
+        </div>
+
+    </div>
+
+
+
+    <!-- الامتحانات -->
+
+    <div class="exam-grid">
+
+
+        <!-- MOCK EXAM -->
+
+        <a
+            href="Interactive_TOEFL_Mock_Exam.html"
+            class="exam-card mock"
+        >
+
+            <div class="number">
+                01
+            </div>
+
+            <div class="icon">
+                📚
+            </div>
+
+            <div class="exam-name">
+                TOEFL<br>
+                Mock Exam
+            </div>
+
+            <div class="start">
+                Start Exam →
+            </div>
+
+        </a>
+
+
+
+        <!-- EXAM 2 -->
+
+        <a
+            href="Interactive_TOEFL_Exam2.html"
+            class="exam-card exam2"
+        >
+
+            <div class="number">
+                02
+            </div>
+
+            <div class="icon">
+                📝
+            </div>
+
+            <div class="exam-name">
+                TOEFL<br>
+                Exam 2
+            </div>
+
+            <div class="start">
+                Start Exam →
+            </div>
+
+        </a>
+
+
+
+        <!-- EXAM 3 -->
+
+        <a
+            href="Interactive_TOEFL_Exam3.html"
+            class="exam-card exam3"
+        >
+
+            <div class="number">
+                03
+            </div>
+
+            <div class="icon">
+                💻
+            </div>
+
+            <div class="exam-name">
+                TOEFL<br>
+                Exam 3
+            </div>
+
+            <div class="start">
+                Start Exam →
+            </div>
+
+        </a>
+
+
+
+        <!-- EXAM 4 -->
+
+        <a
+            href="Interactive_TOEFL_Exam4.html"
+            class="exam-card exam4"
+        >
+
+            <div class="number">
+                04
+            </div>
+
+            <div class="icon">
+                ☑️
+            </div>
+
+            <div class="exam-name">
+                TOEFL<br>
+                Exam 4
+            </div>
+
+            <div class="start">
+                Start Exam →
+            </div>
+
+        </a>
+
+
+    </div>
+
+</div>
+
+</body>
+</html>
