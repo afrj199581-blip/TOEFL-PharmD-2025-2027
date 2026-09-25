@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>امتحان التوفل التجريبي 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f0f4f8; color: #1e293b; overflow-x: hidden; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .opt-btn { transition: all 0.3s ease; }
+        .opt-btn:hover:not(:disabled) { border-color: #3b82f6; background-color: #eff6ff; transform: translateY(-2px); }
+        .opt-btn.correct { background-color: #dcfce7; border-color: #22c55e; color: #166534; font-weight: bold; }
+        .opt-btn.wrong { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .opt-btn:disabled { cursor: default; }
+        .progress-bar-fill { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .passage-scroll::-webkit-scrollbar { width: 6px; }
+        .passage-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .passage-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center py-6 px-4">
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="glass-panel w-full max-w-2xl p-8 rounded-3xl text-center fade-in">
+        <div class="w-24 h-24 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fa-solid fa-graduation-cap text-4xl"></i>
+        </div>
+        <h1 class="text-3xl font-extrabold mb-4 text-slate-800">الامتحان التفاعلي الشامل (الجزء الثاني)</h1>
+        <p class="text-slate-500 mb-8 leading-relaxed">
+            هذا الامتحان يغطي قسم القواعد (Structure 2) وقسم القراءة (Reading 1) بعدد 90 سؤال تفاعلي لتسهيل المراجعة وتخفيف الحمل على المتصفح.
+        </p>
+        
+        <div class="grid grid-cols-2 gap-4 mb-8 text-right text-sm text-slate-600">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <i class="fa-solid fa-list-check text-indigo-500 ml-2"></i> إجمالي الأسئلة: <span class="font-bold text-slate-800">90 سؤال</span>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <i class="fa-solid fa-layer-group text-indigo-500 ml-2"></i> Structure 2 & Reading 1
+            </div>
+        </div>
+        
+        <button onclick="startQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-95 text-lg">
+            ابدأ الامتحان <i class="fa-solid fa-rocket mr-2"></i>
+        </button>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quizScreen" class="glass-panel w-full max-w-2xl rounded-3xl overflow-hidden hidden flex-col relative h-[85vh] sm:h-auto sm:min-h-[600px]">
+        <div class="bg-white px-6 py-4 border-b border-slate-100 flex justify-between items-center z-10 shadow-sm relative">
+            <div class="font-bold text-slate-700">سؤال <span id="qCurrent">1</span> <span class="text-slate-400 text-sm font-normal">من 90</span></div>
+            <div id="sectionBadge" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold tracking-wide">
+                Section
+            </div>
+        </div>
+        
+        <div class="w-full bg-slate-100 h-1.5">
+            <div id="progressBar" class="bg-blue-500 h-1.5 progress-bar-fill w-0"></div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 bg-slate-50 relative pb-24">
+            
+            <div id="passageContainer" class="hidden mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 passage-scroll max-h-48 overflow-y-auto shadow-inner">
+                <h3 class="text-amber-800 font-bold mb-2 flex items-center"><i class="fa-solid fa-file-lines ml-2"></i> Reading Passage</h3>
+                <p id="passageText" class="text-amber-900/80 text-sm leading-relaxed text-left dir-ltr font-serif"></p>
+            </div>
+
+            <div class="mb-8">
+                <h2 id="questionText" class="text-xl font-bold text-slate-800 text-left dir-ltr leading-relaxed">Loading...</h2>
+            </div>
+
+            <div class="mb-6 flex justify-end">
+                <button onclick="toggleHint()" id="hintBtn" class="text-amber-500 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center border border-amber-200">
+                    تلميح <i class="fa-regular fa-lightbulb mr-2"></i>
+                </button>
+            </div>
+            <div id="hintBox" class="hidden mb-6 bg-amber-100 text-amber-800 p-4 rounded-xl text-sm border border-amber-200 slide-up">
+                <i class="fa-solid fa-circle-info ml-1"></i> <span id="hintText"></span>
+            </div>
+
+            <div id="optionsContainer" class="space-y-3">
+            </div>
+
+            <div id="explanationBox" class="hidden mt-6 p-5 rounded-2xl slide-up shadow-sm border">
+                <div class="flex items-center mb-2">
+                    <i id="expIcon" class="text-xl ml-2"></i>
+                    <h3 id="expTitle" class="font-bold text-lg"></h3>
+                </div>
+                <p id="explanationText" class="text-sm leading-relaxed"></p>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 border-t border-slate-100 flex justify-between items-center absolute bottom-0 w-full shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
+            <button id="prevBtn" onclick="changeQuestion(-1)" class="px-5 py-2.5 rounded-xl text-slate-500 font-bold hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                <i class="fa-solid fa-arrow-right ml-1"></i> السابق
+            </button>
+            <button id="nextBtn" onclick="changeQuestion(1)" class="px-5 py-2.5 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700 transition-colors shadow-md disabled:opacity-30 disabled:cursor-not-allowed hidden">
+                التالي <i class="fa-solid fa-arrow-left mr-1"></i>
+            </button>
+            <button id="finishBtn" onclick="showResults()" class="px-5 py-2.5 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-colors shadow-md hidden">
+                إنهاء النتيجة <i class="fa-solid fa-check-double mr-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="resultScreen" class="glass-panel w-full max-w-2xl p-8 rounded-3xl hidden flex-col items-center">
+        <div id="resultIcon" class="w-24 h-24 rounded-full flex items-center justify-center mb-6 text-4xl shadow-lg"></div>
+        <h2 id="resultMsg" class="text-2xl font-bold mb-2"></h2>
+        
+        <div class="relative w-40 h-40 mb-6 flex items-center justify-center rounded-full border-8 border-slate-100">
+            <div class="text-center">
+                <div class="text-4xl font-black text-slate-800" id="finalScore">0</div>
+                <div class="text-slate-500 text-sm">من 90</div>
+            </div>
+        </div>
+
+        <div class="w-full bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 text-center">
+            <p class="font-bold text-slate-700 text-lg">عاش يا بطل! 🚀</p>
+            <p class="text-slate-500 mt-2">عشان تاخد باقي الأسئلة، ارجع للدردشة واطلب الامتحان الثالث.</p>
+        </div>
+
+        <button onclick="location.reload()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-lg">
+            إعادة الامتحان <i class="fa-solid fa-rotate-right mr-2"></i>
+        </button>
+    </div>
+
+    <script>
+        const rawData = [[2, "The electric eel uses its electric shock to capture food and ______.", "A. for protection", "B. protect itself", "C. protecting itself", "D. it protects itself", 1, "قاعدة التوازي للأفعال", "قاعدة التوازي (Parallelism). الفعل (uses... to capture) يُعطف عليه فعل في المصدر مثله، وهو (protect itself)."], [2, "______ anti-trust laws did not exist in the U.S., there would not be as much competition in certain industries.", "A. So", "B. If", "C. For", "D. also", 1, "حالة شرطية", "الجملة تمثل الحالة الشرطية الثانية (Second Conditional)، لذا نحتاج إلى أداة الشرط (If)."], [2, "In 1885 photography changed dramatically ______ introduced paper-based film.", "A. Eastman", "B. when was", "C. when it was", "D. when Eastman", 3, "رابط زمني + فاعل", "الجملة تتطلب رابطاً زمنياً متبوعاً بفاعل وفعل. (when Eastman) توفر الرابط والفاعل."], [2, "A bat will often spend the daylight hours ______ upside down in a tree or cave.", "A. hanging", "B. which hangs", "C. that is", "D. hangs", 0, "الفعل spend بيجي وراه إيه؟", "الفعل (spend time) يتبعه دائماً الفعل مضافاً له (ing)."], [2, "Geomorphology is the study of the changes that ______ on the surface of the earth.", "A. taking place", "B. takes place", "C. take place", "D. they take place", 2, "that بتعود على جمع", "ضمير الوصل (that) يعود على كلمة (changes) وهي جمع، فنستخدم الفعل في صيغة الجمع (take place)."], [2, "A hero of the war of 1812, ______ President of the United States.", "A. Andrew Jackson later became", "B. that Andrew Jackson later became", "C. who was Andrew Jackson", "D. later became Andrew Jackson", 0, "البدل بييجي وراه الفاعل مباشرة", "العبارة الأولى بدل، يجب أن يتبعها الفاعل مباشرة. الخيار A يبدأ بالفاعل (Andrew Jackson)."], [2, "______ jellies, jams are made by retaining the pulp with the fruit juice.", "A. No likeness to", "B. Not alike", "C. Unlike", "D. Dislike", 2, "على عكس...", "نحتاج إلى حرف جر يفيد التناقض. (Unlike) تعني 'على عكس'."], [2, "An elephant can lift ______ a ton with its tusks.", "A. so much that", "B. them", "C. most", "D. as much as", 3, "تعبير للكميات", "التعبير (as much as) يُستخدم مع الكميات ليعني 'بمقدار' أو 'ما يصل إلى'."], [2, "In medieval times ______ his enemy to fight by throwing down his gauntlet.", "A. the challenge", "B. a man made a challenge", "C. a man challenged", "D. his challenge", 2, "الجملة محتاجة فاعل وفعل", "الجملة تفتقر إلى الفاعل والفعل. (a man challenged) توفر فاعلاً وفعلاً متناسقين."], [2, "Rarely ______ acorns until the trees are more than twenty years old.", "A. when oak trees bear", "B. oak trees that bear", "C. do oak trees bear", "D. oak trees bear", 2, "القلب (Inversion) بسبب النفي", "عندما تبدأ الجملة بظرف يفيد النفي (Rarely)، يجب تقديم الفعل المساعد على الفاعل (do oak trees bear)."], [2, "The Andromeda Nebula, ______ more than two million light years away, can be seen from the northern hemisphere.", "A. a galaxy", "B. is a galaxy", "C. a galaxy is", "D. a galaxy which", 0, "عبارة بدل (Appositive)", "ما بين الفاصلتين عبارة بدل تشرح ما هو السديم. لذا نحتاج إلى اسم فقط (a galaxy)."], [2, "The closer to one of the earth’s poles, the greater ______ gravitational force.", "A. is", "B. the", "C. has", "D. it has", 1, "قاعدة The... the...", "قاعدة (The + مقارنة, The + مقارنة). التركيب الصحيح (the greater the gravitational force)."], [2, "Baboons eat a variety of foods, ______ eggs, fruits, grass, insects, plant leaves, and roots.", "A. they include", "B. among them are", "C. among", "D. including", 3, "بما في ذلك...", "نحتاج إلى حرف جر لتقديم قائمة. (including) هي الأنسب."], [2, "The flamingo uses its bill ______ feeding to filter mud and water from the tiny plants and animals it finds in shallow ponds.", "A. when", "B. is", "C. that it is", "D. was", 0, "رابط زمني مختزل", "يمكن اختصار الروابط الزمنية مثل (when) بوضع (v+ing) بعدها مباشرة."], [2, "The first nuclear-powered ship in the world, “The Nautilus,” ______ by the U.S. Navy in 1954.", "A. when it was launched", "B. that was launched", "C. was launched", "D. launched", 2, "مبني للمجهول", "الجملة تفتقر إلى الفعل الأساسي المبني للمجهول (was launched)."], [3, "The winter storm that <u>raced</u> <u>through</u> the area for the last two <u>day</u> moved <u>east</u> today.", "A. raced", "B. through", "C. day", "D. east", 2, "two بيجي وراها إيه؟", "كلمة two تدل على الجمع، لذا يجب أن يأتي بعدها اسم جمع (days). (ملاحظة: مفتاح الإجابات الأصلي أدرجها D خطأً)."], [3, "In the 1800’s <u>botanist</u> Asa Gray worked to <u>describe</u> and <u>classifying</u> the plants <u>found</u> in North America.", "A. botanist", "B. describe", "C. classifying", "D. found", 2, "توازي مع to describe", "قاعدة التوازي. الفعل معطوف على (to describe) فيجب أن يكون في المصدر (classify)."], [3, "Bryce Canyon National Park, <u>where is there</u> oddly shaped and <u>magnificently</u> colored rock <u>formations</u>, is located in southern <u>Utah</u>.", "A. where is there", "B. magnificently", "C. formations", "D. Utah", 0, "ترتيب الفاعل والفعل", "الترتيب الصحيح لعبارة الوصل هو (where there are) لأن الفاعل جمع."], [3, "<u>After</u> <u>talks</u> in Copenhagen yesterday, the Secretary of State <u>returning</u> to <u>Washington</u>.", "A. After", "B. talks", "C. returning", "D. Washington", 2, "ماضي بسيط عشان yesterday", "الجملة تفتقر إلى فعل رئيسي في الماضي (returned)."], [3, "Lava, <u>rock</u> fragments, and <u>gaseous</u> may all erupt <u>from</u> <u>a</u> volcano.", "A. rock", "B. gaseous", "C. from", "D. a", 1, "التوازي يتطلب اسم", "قاعدة التوازي تتطلب اسماً ليتماشى مع الباقي. الكلمة (gaseous) صفة. الصواب (gases)."], [3, "Many <u>of</u> the characters portrayed <u>by</u> writer Joyce Carol Oates <u>is</u> mentally <u>ill</u>.", "A. of", "B. by", "C. is", "D. ill", 2, "الفاعل characters", "الفاعل (Many characters) جمع، لذا لا يمكن استخدام (is). الصواب (are)."], [3, "The two types <u>of</u> nucleic acids, known as <u>DNA</u> and RNA, are <u>not</u> <u>the alike</u>.", "A. of", "B. DNA", "C. not", "D. the alike", 3, "alike بتيجي من غير أداة", "الصفة (alike) لا تسبق بـ (the) أبداً. الصواب (are not alike)."], [3, "<u>The</u> 1890’s <u>in</u> America were known as <u>a</u> Gay <u>Nineties</u>.", "A. The", "B. in", "C. a", "D. Nineties", 2, "حقبة زمنية مشهورة", "المصطلح التاريخي معرف بأل (the Gay Nineties). الصواب (the)."], [3, "The classification of a dinosaur as <u>either</u> saurischian <u>nor</u> ornithischian <u>depends</u> on the structure of the <u>hip</u>.", "A. either", "B. nor", "C. depends", "D. hip", 1, "إيه اللي بييجي مع either؟", "الرابط المزدوج لـ either هو or. بينما nor تأتي مع neither."], [3, "<u>An</u> octopus has three hearts to pump <u>blood</u> <u>throughout</u> <u>their</u> body.", "A. An", "B. blood", "C. throughout", "D. their", 3, "أخطبوط واحد (مفرد)", "الضمير يجب أن يعود على مفرد غير عاقل. الصواب (its)."], [3, "Of all <u>the</u> states in <u>the</u> United States, Rhode Island <u>is</u> <u>a smallest</u>.", "A. the", "B. the", "C. is", "D. a smallest", 3, "تفضيل", "صيغة التفضيل العليا يجب أن تسبق بـ (the). الصواب (the smallest)."], [3, "<u>Studies</u> show that <u>the</u> new strategy is not <u>so effective</u> as the previous <u>one</u>.", "A. Studies", "B. the", "C. so effective", "D. one", 2, "صيغة مساواة", "الأصح استخدام (as effective as). في مفتاح الإجابة الأصلي اعتبرت C."], [3, "<u>Most</u> newspapers depend on the <u>wire</u> services <u>from</u> their international stories <u>and</u> photographs.", "A. Most", "B. wire", "C. from", "D. and", 2, "حرف الجر", "تعتمد على الأخبار 'من أجل' قصصها. الصواب (for)."], [3, "<u>The</u> new system responds <u>at</u> <u>seconds</u> to any <u>emergency</u>.", "A. The", "B. at", "C. seconds", "D. emergency", 1, "مدة زمنية", "للتعبير عن المدة المستغرقة نستخدم حرف الجر (in)."], [3, "Landscape painting <u>was</u> a dominant <u>art</u> <u>forms</u> during much of <u>the</u> nineteenth century.", "A. was", "B. art", "C. forms", "D. the", 2, "a dominant...", "الجملة تتحدث عن شيء مفرد (a dominant art form). الصواب (form)."], [3, "Balloons have been used in various wars <u>not</u> only to direct artillery fire and report troop <u>movements</u> <u>however</u> to carry bombs and protect against <u>low-flying</u> plans.", "A. not", "B. movements", "C. however", "D. low-flying", 2, "إيه بيكمل not only؟", "الرابط المزدوج المكمل لـ (not only) هو (but also)."], [3, "Cartilage <u>covers</u> the ends <u>of</u> bones helps to protect <u>the</u> joints from wear <u>and</u> tear.", "A. covers", "B. of", "C. the", "D. and", 0, "الفعل الرئيسي موجود", "الفعل الرئيسي هو helps، لذا يجب تحويل (covers) إلى اسم فاعل (covering)."], [3, "The Alaskan malamute, used <u>extensively</u> for pulling sleds, <u>is</u> closely related <u>about</u> the <u>wolf</u>.", "A. extensively", "B. is", "C. about", "D. wolf", 2, "related بتاخد حرف إيه؟", "الفعل (related) يأخذ حرف الجر (to)."], [3, "The General Agreement on Tariffs and Trades (GATT) is an <u>international</u> agreement <u>designing</u> to increase trade among <u>member</u> <u>nations</u>.", "A. international", "B. designing", "C. member", "D. nations", 1, "اتفاقية مصممة (مبني للمجهول)", "يجب استخدام التصريف الثالث وليس صيغة الفاعل. الصواب (designed)."], [3, "In a corporation the approval <u>of</u> a majority of stockholders may be <u>required</u> before a <u>major</u> decision can be <u>done</u>.", "A. of", "B. required", "C. major", "D. done", 3, "يصنع قرار يعني إيه؟", "المتلازمة اللفظية لاتخاذ قرار هي (make a decision). الصواب (made)."], [3, "Death Valley is <u>130</u> miles <u>length</u> and no more than <u>14</u> miles <u>wide</u>.", "A. 130", "B. length", "C. 14", "D. wide", 1, "توازي صفات", "قاعدة التوازي تتطلب استخدام الصفة (long) لتتناسب مع (wide)."], [3, "The theory of natural selection is used <u>to</u> explain which animals <u>of</u> a species will die <u>prematurely</u> and which will <u>survival</u>.", "A. to", "B. of", "C. prematurely", "D. survival", 3, "بعد will بييجي إيه؟", "بعد (will) يجب أن يأتي الفعل في المصدر (survive)."], [3, "<u>Almost</u> one-half of those <u>taking</u> specialized <u>courses</u> last year were taking self-improvement <u>course</u>.", "A. Almost", "B. taking", "C. courses", "D. course", 3, "الجمع", "بما أننا نتحدث عن مجموعة، فالنصف يأخذ دورات (courses)."], [3, "Richard Gatling, an <u>invention</u> best known for the development of the Gatling Gun, actually <u>put</u> most of <u>his</u> effort into improving agricultural <u>methods</u>.", "A. invention", "B. put", "C. his", "D. methods", 0, "عاقل", "السياق يتحدث عن شخص. الصواب (inventor)."], [3, "Dorothea Dix worked extensively <u>during</u> the <u>second</u> half of the nineteenth century to improve <u>conditions</u> in mental health facilities and <u>the prisons</u>.", "A. during", "B. second", "C. conditions", "D. the prisons", 3, "التوازي في التعريف", "التوازي مع (mental health facilities) بدون the، الصواب (prisons)."], [4, "Which of the following is the main point the author makes about Native Americans of the Northwest Coast?", "A. They raised crops unique to North America.", "B. They made good use of the environment to build a successful society.", "C. Their technology helped them survive in the area's harsh climate.", "D. Their culture was heavily influenced by the culture of Mexico.", 1, "استغلال البيئة", "القطعة تركز على كيف استغلوا البيئة بنجاح رغم الصعوبات لبناء مجتمع مستقر."], [4, "The climate of the Northwest Coast region is generally", "A. warm and dry", "B. extremely cold", "C. neither very hot nor very cold", "D. constantly changing", 2, "معتدل", "وصفت القطعة المناخ بأنه (moderate temperatures) أي معتدل."], [4, "The underlined word 'game' in the passage is closest in meaning to", "A. sport", "B. tricks", "C. wood", "D. animals", 3, "الصيد", "كلمة game في سياق الغابات والصيد تعني الحيوانات البرية (Animals)."], [4, "According to the passage, what probably discouraged people from trying to go from one part of the Northwest Coast region to another?", "A. Large areas thick with bushes and trees", "B. Vast fields of broken ice", "C. Inability to understand other languages", "D. Disagreements over hunting areas", 0, "كثافة النباتات", "القطعة ذكرت أن النباتات كانت كثيفة جداً مما جعل السفر البري صعباً."], [4, "According to the passage, the Native Americans of the Northwest Coast region generally did not live", "A. in villages", "B. on offshore islands", "C. close to rivers", "D. in the mountains", 3, "الجبال الوعرة", "القطعة ذكرت أن أجزاء كبيرة من الجبال كانت غير مناسبة للسكن."], [4, "The underlined phrase 'teemed with' in the passage is closest in meaning to", "A. varied according to", "B. competed for", "C. were combined with", "D. were full of", 3, "مليئة بـ", "تعني مليئة بـ أو تفيض بـ (were full of)."], [4, "The author implies that the Native Americans of the Northwest Coast differed from most other highly developed societies of the time because", "A. they did not depend on agriculture", "B. they lacked good means of transportation", "C. their society arose in an arctic climate", "D. Their society was based on ownership of domestic animals.", 0, "بدون زراعة", "وصلوا لمستوى ثقافي عالٍ عادة ما يوجد فقط لدى الشعوب الزراعية، لكنهم لم يعتمدوا على الزراعة."], [4, "The underlined word 'they' in the passage refers to", "A. land and sea mammals", "B. wild plant foods", "C. the people of the Northwest coast", "D. agricultural people", 2, "من وصل للمستوى؟", "تعود على الناس (the people)."], [4, "All of the following are mentioned in the passage as being important to the people of the Northwest Coast EXCEPT", "A. boatbuilding skills", "B. forest plants for food", "C. wood for building durable homes", "D. plentiful supplies of seafood", 2, "بناء المنازل من الخشب", "لم تذكر القطعة الخشب لبناء منازل متينة كمورد أساسي."], [4, "It is clear that the author has a high opinion of the region's traditional", "A. gardens", "B. art", "C. architecture", "D. music", 1, "الفن العظيم", "الكاتب وصف أسلوبهم الفني بأنه (one of the world's great art styles)."], [4, "The author mentions the area's population in order to demonstrate that", "A. the environment could support many people", "B. trade with Mexico was of great importance", "C. environmental problems were likely to arise", "D. many people had migrated from Mexico to the area", 0, "كثافة السكان", "ليوضح أن البيئة الغنية دعمت هذا العدد الكبير من السكان (130,000)."], [4, "Which of the following statements can be inferred about engravers, composers, and writers in the Colonies?", "A. Their work was of poor quality.", "B. They could easily become rich.", "C. Their work was in great demand even though it was expensive.", "D. They competed with people abroad who provided similar services.", 3, "المنافسة بالاستيراد", "أعمالهم كانت تُستورد بسعر رخيص، مما يعني أنهم واجهوا منافسة من الخارج."], [4, "The word 'means' in the passage is closest in meaning to", "A. methods", "B. elements", "C. purposes", "D. problems", 0, "طرق", "تعني طرق أو وسائل (methods)."], [4, "The word 'flourishing' in the passage is closest in meaning to", "A. persistent", "B. influential", "C. accomplished", "D. thriving", 3, "مزدهر", "تعني مزدهرة أو ناجحة جداً (thriving)."], [4, "The word 'they' in the passage refers to", "A. portraits", "B. painters", "C. colonies", "D. specimens", 1, "الرسامين", "تعود على الرسامين (painters) الذين كانوا يعلنون عن وصولهم."], [4, "The passage supports which of the following statements about portrait painters?", "A. Few portrait painters enjoyed giving lessons in drawing.", "B. The profession of portrait painting offered little prestige.", "C. Most portrait painters advertised low rates for their services.", "D. Most portrait painters were able to establish themselves in one location.", 2, "أسعار رخيصة", "القطعة ذكرت أنهم كانوا يعلنون عن (cheap rates)."], [4, "The word 'universally' in the passage is closest in meaning to", "A. on purpose", "B. as a result", "C. in exchange", "D. without exception", 3, "بشكل عام/بلا استثناء", "تعني في كل الحالات أو بلا استثناء (without exception)."], [4, "A painter would cancel the fee for a portrait when the customers", "A. were unhappy with the painting", "B. were art students of the painter's", "C. sat for the portrait in the painter's own shop", "D. allowed the painter to display sample works in their homes", 0, "لم يعجبهم", "إذا وجد الزبون الشبه غير مُرضٍ (unpleasing)."], [4, "The author mentions brushes, glass, turpentine, varnish, canvas, and carved frames in the passage as examples of items that", "A. Portrait painters gave to their customers as gifts.", "B. had to be imported into the colonies", "C. varied greatly in price from city to city", "D. some painters sold to supplement their income", 3, "زيادة الدخل", "كانوا يبيعونها لزيادة دخلهم وإعالة أنفسهم."], [4, "The word 'anxious' in the passage is closest in meaning to", "A. worthy", "B. eager", "C. fortunate", "D. obvious", 1, "متحمس/شغوف", "تعني متحمس أو يتوق لشيء (eager)."], [4, "The author states that painting meant portrait painting to imply that", "A. colonists purchased various types of paintings", "B. most colonists engaged in some form of painting", "C. portrait painting was the most highly regarded form of painting", "D. the meaning of the word 'painting' was confusing to many colonists", 2, "الأكثر طلباً ومكانة", "كانت تعتبر أرقى وأهم شكل من أشكال الرسم لديهم."], [4, "All of the following are reasons why portrait painters prospered EXCEPT:", "A. There was little competition among portrait painters.", "B. Colonists felt that portraits were a symbol of high status in society.", "C. Portraits were considered important decorations for colonial homes.", "D. Portraits were the only way to preserve the likeness of a loved me.", 0, "كان فيه منافسة قوية", "القطعة ذكرت أن المهنة كانت تنافسية جداً (competitive profession)."], [4, "What aspect of bald eagles does the passage mainly discuss?", "A. Diet", "B. Nesting behavior", "C. Habitat", "D. Hunting skill", 0, "الغذاء", "القطعة كلها تركز على ماذا تأكل النسور وتحديد نظامها الغذائي."], [4, "Why is a pellet analysis a poor research technique?", "A. The pellets are difficult to locate.", "B. The proportion of fish remains is too low.", "C. Small rodents eat some of the pellets.", "D. The partially digested remains are too damaged to analyze.", 1, "الأسماك تهضم سريعاً", "الأسماك تهضم بسهولة فلا تظهر بقاياها بوضوح في الكريات المتقيأة."], [4, "According to the passage, what is one effect of an eagle stealing prey from other predators?", "A. It reduces the time required for hunting.", "B. The eagle is able to hunt close to its nest.", "C. Other predators are driven away.", "D. The variety of food available to the eagle is increased.", 3, "يزيد التنوع", "هذا يفتح لها مجالاً واسعاً جديداً من مصادر الغذاء."], [4, "According to the passage, all of the following factors affect an eagle's choice of food EXCEPT", "A. the season of the year", "B. the size of the prey", "C. what it has been eating recently", "D. its normal preferences", 1, "الحجم لا يهم", "القطعة ذكرت أن النسور تتغذى على فريسة من 'أي حجم' (prey of any size)."], [4, "Given a selection, which of the following would an eagle probably eat first?", "A. Fish", "B. Rodents", "C. Insects", "D. Birds", 0, "المفضل", "الأسماك (Fish) هي الاختيار الأول دائماً للنسور."], [4, "The word 'diversity' in the passage is closest in meaning to", "A. variety", "B. volume", "C. region", "D. necessity", 0, "تنوع", "تعني تنوع (variety)."], [4, "The word 'next' in the passage refers to", "A. habits", "B. location", "C. tactics", "D. diet", 1, "المكان", "تشير إلى (location) 'من مكان إلى المكان التالي'."], [4, "The word 'expanses' in the passage is closest in meaning to", "A. areas", "B. seasons", "C. concentrations", "D. studies", 0, "مساحات", "تعني مساحات أو مناطق واسعة (areas)."], [4, "The word 'prior' in the passage is closest in meaning to", "A. significant", "B. noticeable", "C. past", "D. normal", 2, "السابق", "تعني سابق أو ماضي (past)."], [4, "The word 'it' in the passage refers to", "A. fish", "B. experience", "C. eagle", "D. item", 3, "العنصر الغذائي", "تعود على العنصر المحدد من الطعام (item) الذي يظل النسر يبحث عنه طالما كان متاحاً."], [4, "According to the passage, the direct method of determining what bald eagles eat is to", "A. conduct preference tests", "B. monitor prey populations", "C. observe eagles foraging in the wild", "D. examine food remains at nests", 2, "المراقبة المباشرة", "القطعة بدأت بأن أفضل طريقة هي مراقبتهم مباشرة أثناء الصيد في البرية."], [4, "What is the passage mainly about?", "A. The contributions of clockmakers", "B. The history of the clockmaking industry in the 18th and early 19th centuries", "C. The artistic value of clocks", "D. Factors that influenced materials", 1, "تاريخ صناعة الساعات", "تتحدث عن تاريخ تطور صناعة الساعات من النحاس للخشب في أمريكا."], [4, "The word 'them' in the passage refers to", "A. tall clocks", "B. clockmakers", "C. tools", "D. engines", 2, "الأدوات", "استخدموا أدوات كثيرة، (من بينها/من بين هذه الأدوات) آلات القطع. تعود على tools."], [4, "In stating that clocks were often the work of more than one set of hands the author means that", "A. a variety of tools were needed", "B. most clockmakers worked in factories", "C. each clock was produced by several workers", "D. many clockmakers developed unusual techniques", 2, "أكثر من شخص", "تعني أن كل ساعة كان يعمل على إنتاجها عدة عمال."], [4, "The word 'scarcity' in the passage is closest in meaning to", "A. complexity", "B. attractiveness", "C. familiarity", "D. shortage", 3, "ندرة", "تعني ندرة أو نقص (shortage)."], [4, "The word 'encouraged' in the passage is closest in meaning to", "A. improved", "B. guaranteed", "C. promoted", "D. completed", 2, "شجّع / روّج", "تعني شجعت أو دفعت إلى (promoted)."], [4, "Why were clocks with wood mechanisms produced in greater numbers than clocks with brass movements?", "A. Wood mechanisms allowed for greater variety", "B. Wood mechanisms combined size with precision.", "C. Wood mechanisms were less expensive to produce.", "D. It was possible to make several wood mechanisms at one time.", 2, "أرخص بكثير", "كانت الساعات الخشبية تكلف أقل من نصف سعر النحاسية."], [4, "According to the passage, wood and brass clocks were similar in their", "A. appearance", "B. value", "C. durability", "D. popularity", 0, "الشكل الخارجي", "القطعة ذكرت أن الساعات الخشبية قلدت النحاسية في الشكل (imitated brass clocks)."], [4, "Daniel Burnap is mentioned in the passage to", "A. illustrate how rapidly the clock industry grew", "B. describe an original technique", "C. describe the variety in quality", "D. illustrate how long it took to make clocks at the time", 3, "بطء العملية", "ذُكر ليوضح أن العملية كانت بطيئة جداً لدرجة أنه كان ينتج 4 ساعات فقط في السنة."], [4, "The word 'vast' in the passage is closest in meaning to", "A. interested", "B. accepted", "C. great", "D. simple", 2, "هائل", "تعني كبير أو عظيم (great)."], [4, "Why were tower clocks, church bells, and town criers needed?", "A. People found them more reliable.", "B. They made it possible for everyone in the city to know the time.", "C. Most people used them to set watches.", "D. They were used to introduce clockmakers.", 1, "لأن الساعات كانت نادرة", "لأن الساعات الشخصية كانت نادرة وغالية، فكانت هذه الوسائل العامة تعرف الجميع بالوقت."], [4, "What can be inferred from the passage about clock factories in North America?", "A. They produced more expensive clocks.", "B. They did not produce any tall clocks.", "C. They used imported clock cases.", "D. They did not exist until after the early nineteenth century.", 3, "قبل القرن الـ19 كانت يدوية", "القطعة تقول إنها كانت تُصنع يدوياً قبل أن يبدأ الإنتاج في المصانع، مما يعني أن المصانع لم تكن موجودة في وقت مبكر."], [4, "Which of the following would be the most appropriate title for this passage?", "A. The Apollo Astronauts", "B. Soil on the Moon", "C. What the Moon is made of", "D. Basalt and Breccia", 2, "مكونات القمر", "القطعة تشرح تكوين القمر من تربة وصخور (What the Moon is made of)."], [4, "According to the passage, what does moon soil consist of?", "A. Hydrogen and helium", "B. Large chunks of the volcanic lava", "C. Tiny pieces of stones and glass", "D. Streams of gases", 2, "قطع صغيرة", "تحتوي على قطع صغيرة من الصخر والزجاج."], [4, "Which of the following was NOT brought back to the earth by the astronauts?", "A. Basalt", "B. Soil", "C. Breccia", "D. Plant life", 3, "حياة نباتية", "العلماء لم يجدوا أي أثر للحياة النباتية أو الحيوانية."], [4, "According to the passage, breccia was formed", "A. When objects struck the moon", "B. From volcanic lava", "C. When streams of gases hit the surface", "D. From the interaction of helium and hydrogen", 0, "الاصطدام", "تشكلت من قوة اصطدام الأجسام (النيازك) بسطح القمر."], [4, "According to the passage, what do scientists believe about the gases found in the moon rocks?", "A. The gases came to the moon from the sun", "B. The gases were created inside the rocks", "C. The streams of gases went to the sun", "D. The emittance of the gases caused the moon's temperature to rise", 0, "من الشمس", "يُعتقد أنها حُملت إلى القمر عبر تيارات الغاز المنبعثة من الشمس."], [4, "The author's purpose in this passage is to", "A. Describe some rock and soil samples.", "B. Explain some of the things man has learned from space flights.", "C. Propose a new theory.", "D. Demonstrate the difference between basalt and breccia.", 1, "ماذا تعلمنا من الفضاء", "القطعة تشرح الأشياء التي تعلمها العلماء عن القمر بفضل الرحلات الفضائية."]];
+        const passages = {"Reading 1 - Passage 1": "The Northwest Coast, a complex pattern of islands, coastal plains, foothills, and mountain ranges, extends from California north to Alaska... (Refer to the original book for the full text of the passage about the Northwest Coast Native Americans).", "Reading 1 - Passage 2": "The demand for portrait painting gave steady employment to surprisingly many artists in colonial North America... (Refer to the original book for the full text of the passage about portrait painting).", "Reading 1 - Passage 3": "There are several problems in accurately determining what bald eagles eat. The best approach is to observe the eagles... (Refer to the original book for the full text of the passage about bald eagles).", "Reading 1 - Passage 4": "Clocks were made in the United States long before entrepreneurs began to produce them in large numbers in factories... (Refer to the original book for the full text of the passage about clockmaking).", "Reading 1 - Passage 5": "Rock and soil samples brought back from the moon by the Apollo astronauts have taught scientists much about the composition of the moon... (Refer to the original book for the full text of the passage about moon soil and rocks)."};
+        
+        const sectionNames = { 2: "Structure 2 (Part A)", 3: "Structure 2 (Part B)", 4: "Reading Comprehension 1" };
+        
+        let currentIdx = 0;
+        let userAnswers = new Array(rawData.length).fill(null);
+        let sectionScores = { 2: {c:0, t:0}, 3: {c:0, t:0}, 4: {c:0, t:0} };
+
+        function startQuiz() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('hidden');
+            document.getElementById('quizScreen').classList.add('flex');
+            loadQuestion(0);
+        }
+
+        function loadQuestion(idx) {
+            currentIdx = idx;
+            const q = rawData[idx];
+            
+            document.getElementById('qCurrent').textContent = idx + 1;
+            document.getElementById('progressBar').style.width = `${((idx + 1) / rawData.length) * 100}%`;
+            document.getElementById('sectionBadge').textContent = sectionNames[q[0]];
+            
+            const passContainer = document.getElementById('passageContainer');
+            if (q[0] === 4) {
+                passContainer.classList.remove('hidden');
+                passContainer.classList.add('block');
+                
+                // Determine passage based on question index roughly
+                let passKey = "Reading 1 - Passage 1";
+                if(idx >= 51) passKey = "Reading 1 - Passage 2";
+                if(idx >= 62) passKey = "Reading 1 - Passage 3";
+                if(idx >= 73) passKey = "Reading 1 - Passage 4";
+                if(idx >= 84) passKey = "Reading 1 - Passage 5";
+                
+                document.getElementById('passageText').textContent = passages[passKey];
+            } else {
+                passContainer.classList.add('hidden');
+                passContainer.classList.remove('block');
+            }
+
+            document.getElementById('questionText').innerHTML = q[1];
+            
+            const optsContainer = document.getElementById('optionsContainer');
+            optsContainer.innerHTML = '';
+            
+            const options = [q[2], q[3], q[4], q[5]];
+            options.forEach((optText, i) => {
+                const btn = document.createElement('button');
+                btn.className = `opt-btn w-full text-left dir-ltr p-4 rounded-xl border-2 border-slate-200 bg-white font-medium text-slate-700 shadow-sm block`;
+                btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-slate-100 text-slate-600 text-center leading-8 mr-3 font-bold pointer-events-none">${String.fromCharCode(65+i)}</span> ${optText.substring(3)}`;
+                btn.onclick = () => handleAnswer(i);
+                
+                if (userAnswers[idx] !== null) {
+                    btn.disabled = true;
+                    if (i === q[6]) {
+                        btn.classList.add('correct', 'border-green-500', 'bg-green-50');
+                        btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-green-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none"><i class="fa-solid fa-check"></i></span> ${optText.substring(3)}`;
+                    } else if (i === userAnswers[idx]) {
+                        btn.classList.add('wrong', 'border-red-400', 'bg-red-50');
+                        btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-red-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none"><i class="fa-solid fa-xmark"></i></span> ${optText.substring(3)}`;
+                    }
+                }
+                optsContainer.appendChild(btn);
+            });
+
+            document.getElementById('hintBox').classList.add('hidden');
+            document.getElementById('hintText').textContent = q[7];
+            document.getElementById('hintBtn').style.display = (userAnswers[idx] === null && q[7]) ? 'flex' : 'none';
+
+            const expBox = document.getElementById('explanationBox');
+            if (userAnswers[idx] !== null) {
+                showExplanation(userAnswers[idx] === q[6]);
+            } else {
+                expBox.classList.add('hidden');
+            }
+
+            document.getElementById('prevBtn').disabled = (idx === 0);
+            
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+            
+            if (idx === rawData.length - 1) {
+                nextBtn.classList.add('hidden');
+                if (userAnswers[idx] !== null) finishBtn.classList.remove('hidden');
+                else finishBtn.classList.add('hidden');
+            } else {
+                finishBtn.classList.add('hidden');
+                if (userAnswers[idx] !== null) nextBtn.classList.remove('hidden');
+                else nextBtn.classList.add('hidden');
+            }
+        }
+
+        function toggleHint() {
+            document.getElementById('hintBox').classList.toggle('hidden');
+        }
+
+        function handleAnswer(selectedIndex) {
+            const q = rawData[currentIdx];
+            userAnswers[currentIdx] = selectedIndex;
+            const isCorrect = (selectedIndex === q[6]);
+            
+            if (isCorrect) sectionScores[q[0]].c++;
+
+            const buttons = document.getElementById('optionsContainer').children;
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].disabled = true;
+                if (i === q[6]) {
+                    buttons[i].classList.add('correct');
+                    buttons[i].querySelector('span').innerHTML = '<i class="fa-solid fa-check"></i>';
+                    buttons[i].querySelector('span').className = "inline-block w-8 h-8 rounded bg-green-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none";
+                } else if (i === selectedIndex) {
+                    buttons[i].classList.add('wrong');
+                    buttons[i].querySelector('span').innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    buttons[i].querySelector('span').className = "inline-block w-8 h-8 rounded bg-red-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none";
+                }
+            }
+
+            document.getElementById('hintBtn').style.display = 'none';
+            document.getElementById('hintBox').classList.add('hidden');
+            showExplanation(isCorrect);
+            
+            if (currentIdx === rawData.length - 1) document.getElementById('finishBtn').classList.remove('hidden');
+            else document.getElementById('nextBtn').classList.remove('hidden');
+        }
+
+        function showExplanation(isCorrect) {
+            const expBox = document.getElementById('explanationBox');
+            const expTitle = document.getElementById('expTitle');
+            const expIcon = document.getElementById('expIcon');
+            const q = rawData[currentIdx];
+
+            expBox.classList.remove('hidden', 'exp-success', 'exp-error');
+            
+            if (isCorrect) {
+                expBox.classList.add('exp-success');
+                expTitle.textContent = "إجابة صحيحة!";
+                expTitle.className = "font-bold text-lg text-green-700";
+                expIcon.className = "fa-solid fa-circle-check text-green-600 ml-2 text-xl";
+            } else {
+                expBox.classList.add('exp-error');
+                expTitle.textContent = "إجابة خاطئة!";
+                expTitle.className = "font-bold text-lg text-red-700";
+                expIcon.className = "fa-solid fa-circle-xmark text-red-600 ml-2 text-xl";
+            }
+            
+            document.getElementById('explanationText').innerHTML = q[8];
+        }
+
+        function changeQuestion(step) {
+            if (currentIdx + step >= 0 && currentIdx + step < rawData.length) {
+                loadQuestion(currentIdx + step);
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizScreen').classList.remove('flex');
+            document.getElementById('quizScreen').classList.add('hidden');
+            
+            const resScreen = document.getElementById('resultScreen');
+            resScreen.classList.remove('hidden');
+            resScreen.classList.add('flex');
+
+            let totalCorrect = 0;
+            for(let key in sectionScores) totalCorrect += sectionScores[key].c;
+            
+            document.getElementById('finalScore').textContent = totalCorrect;
+
+            let percentage = (totalCorrect / rawData.length) * 100;
+            const icon = document.getElementById('resultIcon');
+            const msg = document.getElementById('resultMsg');
+            
+            if(percentage >= 80) {
+                icon.className = "w-24 h-24 rounded-full flex items-center justify-center mb-6 text-5xl shadow-lg bg-green-100 text-green-600";
+                icon.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+                msg.textContent = "ممتاز! أداء رائع يا بطل 🚀";
+                msg.className = "text-2xl font-bold mb-2 text-green-700";
+            } else {
+                icon.className = "w-24 h-24 rounded-full flex items-center justify-center mb-6 text-5xl shadow-lg bg-amber-100 text-amber-600";
+                icon.innerHTML = '<i class="fa-solid fa-thumbs-up"></i>';
+                msg.textContent = "جيد جداً، استمر! 👍";
+                msg.className = "text-2xl font-bold mb-2 text-amber-700";
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>امتحان التوفل التجريبي 3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f0f4f8; color: #1e293b; overflow-x: hidden; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .opt-btn { transition: all 0.3s ease; }
+        .opt-btn:hover:not(:disabled) { border-color: #3b82f6; background-color: #eff6ff; transform: translateY(-2px); }
+        .opt-btn.correct { background-color: #dcfce7; border-color: #22c55e; color: #166534; font-weight: bold; }
+        .opt-btn.wrong { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .opt-btn:disabled { cursor: default; }
+        .progress-bar-fill { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .passage-scroll::-webkit-scrollbar { width: 6px; }
+        .passage-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .passage-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center py-6 px-4">
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="glass-panel w-full max-w-2xl p-8 rounded-3xl text-center fade-in">
+        <div class="w-24 h-24 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fa-solid fa-graduation-cap text-4xl"></i>
+        </div>
+        <h1 class="text-3xl font-extrabold mb-4 text-slate-800">الامتحان التفاعلي الشامل (الجزء الثالث)</h1>
+        <p class="text-slate-500 mb-8 leading-relaxed">
+            هذا الامتحان يغطي قسم القواعد (Structure 3 & 4) وقسم القراءة (Reading 2) بإجمالي 130 سؤال تفاعلي.
+            <br>
+            <span class="text-rose-500 font-bold text-sm bg-rose-50 px-2 py-1 rounded mt-2 inline-block">
+                تنبيه: كما في الامتحان السابق، أسئلة قراءة معينة (Herman Melville) تم برمجة الإجابات الخاطئة الخاصة بالكتاب لكي تتطابق مع سيستم التصحيح.
+            </span>
+        </p>
+        
+        <div class="grid grid-cols-2 gap-4 mb-8 text-right text-sm text-slate-600">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <i class="fa-solid fa-list-check text-indigo-500 ml-2"></i> إجمالي الأسئلة: <span class="font-bold text-slate-800">130 سؤال</span>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <i class="fa-solid fa-layer-group text-indigo-500 ml-2"></i> Structure 3 & 4 + Reading 2
+            </div>
+        </div>
+        
+        <button onclick="startQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-95 text-lg">
+            ابدأ الامتحان <i class="fa-solid fa-rocket mr-2"></i>
+        </button>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quizScreen" class="glass-panel w-full max-w-2xl rounded-3xl overflow-hidden hidden flex-col relative h-[85vh] sm:h-auto sm:min-h-[600px]">
+        <div class="bg-white px-6 py-4 border-b border-slate-100 flex justify-between items-center z-10 shadow-sm relative">
+            <div class="font-bold text-slate-700">سؤال <span id="qCurrent">1</span> <span class="text-slate-400 text-sm font-normal">من 130</span></div>
+            <div id="sectionBadge" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold tracking-wide">
+                Section
+            </div>
+        </div>
+        
+        <div class="w-full bg-slate-100 h-1.5">
+            <div id="progressBar" class="bg-blue-500 h-1.5 progress-bar-fill w-0"></div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 bg-slate-50 relative pb-24">
+            
+            <div id="passageContainer" class="hidden mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 passage-scroll max-h-48 overflow-y-auto shadow-inner">
+                <h3 class="text-amber-800 font-bold mb-2 flex items-center"><i class="fa-solid fa-file-lines ml-2"></i> Reading Passage</h3>
+                <p id="passageText" class="text-amber-900/80 text-sm leading-relaxed text-left dir-ltr font-serif"></p>
+            </div>
+
+            <div class="mb-8">
+                <h2 id="questionText" class="text-xl font-bold text-slate-800 text-left dir-ltr leading-relaxed">Loading...</h2>
+            </div>
+
+            <div class="mb-6 flex justify-end">
+                <button onclick="toggleHint()" id="hintBtn" class="text-amber-500 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center border border-amber-200">
+                    تلميح <i class="fa-regular fa-lightbulb mr-2"></i>
+                </button>
+            </div>
+            <div id="hintBox" class="hidden mb-6 bg-amber-100 text-amber-800 p-4 rounded-xl text-sm border border-amber-200 slide-up">
+                <i class="fa-solid fa-circle-info ml-1"></i> <span id="hintText"></span>
+            </div>
+
+            <div id="optionsContainer" class="space-y-3">
+            </div>
+
+            <div id="explanationBox" class="hidden mt-6 p-5 rounded-2xl slide-up shadow-sm border">
+                <div class="flex items-center mb-2">
+                    <i id="expIcon" class="text-xl ml-2"></i>
+                    <h3 id="expTitle" class="font-bold text-lg"></h3>
+                </div>
+                <p id="explanationText" class="text-sm leading-relaxed"></p>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 border-t border-slate-100 flex justify-between items-center absolute bottom-0 w-full shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
+            <button id="prevBtn" onclick="changeQuestion(-1)" class="px-5 py-2.5 rounded-xl text-slate-500 font-bold hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                <i class="fa-solid fa-arrow-right ml-1"></i> السابق
+            </button>
+            <button id="nextBtn" onclick="changeQuestion(1)" class="px-5 py-2.5 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700 transition-colors shadow-md disabled:opacity-30 disabled:cursor-not-allowed hidden">
+                التالي <i class="fa-solid fa-arrow-left mr-1"></i>
+            </button>
+            <button id="finishBtn" onclick="showResults()" class="px-5 py-2.5 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-colors shadow-md hidden">
+                إنهاء النتيجة <i class="fa-solid fa-check-double mr-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="resultScreen" class="glass-panel w-full max-w-2xl p-8 rounded-3xl hidden flex-col items-center">
+        <div id="resultIcon" class="w-24 h-24 rounded-full flex items-center justify-center mb-6 text-4xl shadow-lg"></div>
+        <h2 id="resultMsg" class="text-2xl font-bold mb-2"></h2>
+        
+        <div class="relative w-40 h-40 mb-6 flex items-center justify-center rounded-full border-8 border-slate-100">
+            <div class="text-center">
+                <div class="text-4xl font-black text-slate-800" id="finalScore">0</div>
+                <div class="text-slate-500 text-sm">من 130</div>
+            </div>
+        </div>
+
+        <div class="w-full bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 text-center">
+            <p class="font-bold text-slate-700 text-lg">مجهود جبار! 🌟</p>
+            <p class="text-slate-500 mt-2">عشان تخلص الكتاب بالكامل وكل الأسئلة، ارجع للدردشة واطلب الامتحان الرابع والأخير.</p>
+        </div>
+
+        <button onclick="location.reload()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-lg">
+            إعادة الامتحان <i class="fa-solid fa-rotate-right mr-2"></i>
+        </button>
+    </div>
+
+    <script>
+        const rawData = [[3, "Jackson, Mississippi, ______ capital, is the largest city in the state.", "A. the", "B. where is the", "C. is the", "D. it is the", 0, "بدل (Appositive)", "نحتاج هنا إلى 'بدل' (Appositive) يصف الفاعل (Jackson). البدل عبارة عن اسم يوضح الاسم الذي يسبقه، لذا نحتاج فقط إلى (the) لتكوين العبارة (the capital)."], [3, "It is the recommendation of the U.S. Public Health Service ______ all children be vaccinated against a variety of diseases.", "A. for", "B. that", "C. when", "D. suggests", 1, "بعد كلمات التوصية", "بعد كلمات مثل (recommendation, suggestion) نستخدم الرابط (that) لتقديم الجملة التي تحتوي على التوصية."], [3, "In 1774 delegates from all colonies ______ attended the First Continental Congress.", "A. Georgia", "B. the exception was Georgia", "C. except Georgia", "D. except that Georgia was", 2, "تعبير استثناء", "المعنى المقصود هو أن مندوبين من جميع المستعمرات 'ما عدا' جورجيا حضروا المؤتمر. التعبير الصحيح للاستثناء هو (except)."], [3, "Valley Forge National Park commemorates the time that Washington ______ in Valley Forge with his troops.", "A. spend", "B. spent", "C. was spent", "D. has been spent", 1, "حدث في الماضي", "الجملة تتحدث عن حدث تم وانتهى في الماضي، و(Washington) هو الفاعل، لذا نستخدم الماضي البسيط المبني للمعلوم (spent)."], [3, "In New England ______ picturesque fishing villages and manufacturing towns.", "A. has", "B. many", "C. about", "D. there are", 3, "فاعل وفعل للإشارة للوجود", "الجملة تبدأ بشبه جملة ظرفية وتفتقر إلى فاعل وفعل. التعبير (there are) يعمل كفاعل وفعل للإشارة إلى وجود القرى والمدن."], [3, "The pirate Jean Lafitte offered his services to the U.S. government in the War of 1812, ______, and received a full pardon from President James Madison.", "A. fought in the Battle of New Orleans", "B. the Battle of New Orleans was", "C. he fought in the Battle of New Orleans", "D. the Battle of New Orleans", 0, "قاعدة التوازي", "قاعدة التوازي (Parallelism). الجملة تعطف أفعالاً ماضية قام بها الفاعل (offered, ..., and received). الفعل الأوسط (fought)."], [3, "Although fish do not have any outer ears, ______ have a simple inner ear on either side of the head.", "A. there are varieties", "B. they are varieties", "C. some varieties", "D. which varieties", 2, "جملة جديدة بعد Although", "الجملة الثانية بعد (Although) يجب أن تكون جملة كاملة تبدأ بفاعل. (some varieties) تعمل كفاعل جمع يتماشى مع (have)."], [3, "Jamestown, the first permanent English settlement in America, ______ in 1607.", "A. it was founded", "B. colonists arrived", "C. was established", "D. founded", 2, "مبني للمجهول", "كلمة (Jamestown) هي الفاعل، وتفتقر الجملة إلى فعل رئيسي. المدينة لا تؤسس نفسها بل 'تُأسَس'، لذا نحتاج (was established)."], [3, "Before ______, Stephen A. Douglas took part in a series of debates with Lincoln on the slavery issue.", "A. the Civil War", "B. the Civil War was", "C. the Civil War with", "D. it happened that the Civil War", 0, "حرف جر + اسم", "كلمة (Before) يمكن أن تعمل كحرف جر يليه اسم. الخيار الأنسب والمباشر هو (the Civil War) أي 'قبل الحرب الأهلية'."], [3, "______ through a telescope, Venus appears to go through changes in size and shape.", "A. It is seen", "B. Seeing", "C. When seen", "D. It has seen", 2, "عبارة ظرفية مختزلة", "هذه عبارة ظرفية مختزلة (Reduced Adverb Clause). أصلها (When it is seen). يتم حذف الفاعل وفعل الكينونة لتصبح (When seen)."], [3, "The various types of bacteria are classified according to ______ shaped.", "A. they have", "B. having", "C. how they are", "D. whose", 2, "شبه جملة اسمية", "الفعل (classified according to) يتبعه شبه جملة اسمية (Noun Clause). (how they are) تكوّن الجملة الصحيحة 'كيف تتشكل'."], [3, "Beavers have been known to use logs, branches, rocks, and mud to build dams that are more than a thousand ______", "A. foot in length", "B. feet long", "C. long feet", "D. lengthy foot", 1, "جمع + صفة طول", "بعد الرقم (a thousand) نستخدم اسم جمع (feet)، متبوعاً بالصفة (long) لوصف الطول. الترتيب الصحيح هو (feet long)."], [3, "______ as the most important crop in Hawaii is sugar cane.", "A. It ranks", "B. It is ranked", "C. What ranks", "D. The rank", 2, "فاعل الجملة الأساسية", "الجملة تفتقر إلى فاعل للفعل الرئيسي (is). نحتاج إلى شبه جملة اسمية كفاعل (Noun Clause). (What ranks...) تعني 'الذي يُصنف'."], [3, "______ stone tools and animal remains found with the human fossils, anthropologists have determined that Neanderthal man was a successful hunter.", "A. When the", "B. The", "C. Both the", "D. From the", 3, "مصدر المعلومة", "الجملة تبدأ بشبه جملة ظرفية توضح مصدر المعلومة. الحرف (From) هو الأنسب بمعنى 'من خلال الأدوات الحجرية...'."], [3, "In the U.S. more than 60 percent of all high school students who ______ continue their education.", "A. do not", "B. graduate", "C. will", "D. can", 1, "فعل لضمير الوصل", "ضمير الوصل (who) يعود على الطلاب ويحتاج إلى فعل يكمل المعنى ضمن جملة الوصل. (graduate) هو الفعل الأنسب."], [3, "Together Rogers and Hammerstein wrote nine musicals, the first of <u>whose</u> was Oklahoma (1943).", "A. Together", "B. wrote", "C. nine musicals", "D. whose", 3, "لغير العاقل", "الخطأ في (whose). نحن نشير إلى أشياء غير عاقلة. ضمير الوصل الصحيح لغير العاقل بعد حرف جر هو (which)."], [3, "J. Edgar Hoover <u>has served</u> as director of the FBI from 1924 until his death in 1972.", "A. has served", "B. as", "C. until", "D. death", 0, "حدث انتهى في الماضي", "الجملة تتحدث عن فترة زمنية انتهت بالكامل في الماضي (من 1924 حتى وفاته 1972). الصواب استخدام الماضي البسيط: (served)."], [3, "For photosynthesis to occur, a leaf requires carbon dioxide, water, and <u>light is also necessary</u>.", "A. For", "B. to occur", "C. requires", "D. light is also necessary", 3, "قاعدة التوازي", "وفقاً لقاعدة التوازي (Parallelism)، يجب عطف اسم على الأسماء السابقة. الصواب أن نكتفي بكلمة (light)."], [3, "Denver is <u>call</u> the \"Mile High City\" because it is at an altitude of 5,280 feet, or one mile, above sea level.", "A. call", "B. because", "C. altitude", "D. above", 0, "مبني للمجهول", "الجملة مبنية للمجهول، فمدينة دنفر تُسمى. يجب أن يأتي الفعل في التصريف الثالث بعد فعل الكينونة. الصواب: (called)."], [3, "A neutrino is a subatomic particle <u>it</u> has no electrical charge.", "A. is a", "B. it", "C. has no", "D. charge", 1, "ضمير وصل", "لا يمكن وضع ضمير فاعل مباشرة لبدء جملة وصفية بدون رابط. الصواب استخدام ضمير وصل مثل (that) أو (which)."], [3, "While the sun is the major source of ultraviolet rays, it is not the source <u>only</u>.", "A. While", "B. major", "C. it is not", "D. only", 3, "ترتيب الصفة", "الخطأ في ترتيب الكلمات. الصفة (only) يجب أن تسبق الموصوف (source). الصواب: (the only source)."], [3, "Gamma globulin, a protein found in blood plasma, <u>it is</u> used to prevent such infectious diseases as measles and viral hepatitis.", "A. found", "B. it is", "C. used to", "D. such", 1, "تكرار الفاعل", "الفاعل هو (Gamma globulin)، وما بين الفاصلتين هو جملة اعتراضية، فلا داعي لتكرار الفاعل بضمير (it). الصواب حذف (it)."], [3, "Nuclear <u>powers</u> production in the U.S. is controlled by the Nuclear Regulatory commission (NRC).", "A. powers", "B. is controlled", "C. by", "D. Regulatory", 0, "اسم يعمل كصفة", "عندما نستخدم اسماً كصفة لاسم آخر، يجب أن يكون الاسم الأول مفرداً. الصواب: (power)."], [3, "A dam stops the flow of water, creating a reservoir and <u>raise</u> the level of water.", "A. stops", "B. flow", "C. creating", "D. raise", 3, "توازي مع creating", "قاعدة التوازي. الفعل (raise) معطوف بحرف (and) على (creating)، لذا يجب أن يكون بنفس الصيغة. الصواب: (raising)."], [3, "After <u>learned</u> to print, elementary school children learn cursive writing.", "A. learned", "B. elementary", "C. children", "D. writing", 0, "بعد حرف الجر بدون فاعل", "بعد حرف الجر (After) كأداة ربط بدون فاعل صريح، يجب استخدام صيغة الـ (v+ing). الصواب: (learning)."], [3, "<u>Authors</u> Samuel Eliot Marison won two Pulitzer Prizes...", "A. Authors", "B. won", "C. two", "D. Prizes", 0, "شخص واحد", "الاسم الذي يلي الكلمة يشير إلى شخص واحد فقط، لذا يجب أن يكون اللقب مفرداً. الصواب: (Author)."], [3, "The United States is the world's largest cheese producer, making more than two million tons of cheese <u>annual</u>.", "A. largest", "B. making", "C. more than", "D. annual", 3, "نحتاج ظرف", "الجملة تصف الفعل (making)، لذا نحتاج إلى ظرف (Adverb) وليس صفة. الصواب: (annually) أي سنوياً."], [3, "The system for helping slaves escape to the north was called the \"Underground Railroad,\" though it was neither underground <u>or</u> a railroad.", "A. for helping", "B. escape", "C. was called", "D. or", 3, "الرابط neither", "الرابط المزدوج المتلازم مع (neither) هو (nor) وليس (or). الصواب: (nor)."], [3, "Natural gas is <u>compose</u> of hydrocarbon molecules that break apart into hydrogen and carbon atoms when heated.", "A. compose", "B. molecules", "C. break apart", "D. heated", 0, "مبني للمجهول", "الجملة مبنية للمجهول. الغاز الطبيعي 'يتكون من'. الصواب استخدام التصريف الثالث: (composed)."], [3, "Diamonds are evaluated on the basis of their <u>weigh</u>, purity, and color.", "A. evaluated", "B. weigh", "C. purity", "D. color", 1, "توازي الأسماء", "قاعدة التوازي تتطلب اسماً. الكلمة (weigh) فعل يزن، والصواب هو الاسم (weight)."], [3, "<u>According</u> the Kinetic theory, all matter consists of constantly moving particles.", "A. According", "B. theory", "C. consists", "D. moving", 0, "حرف الجر ناقص", "المصطلح الإنجليزي الصحيح هو (According to). ينقص حرف الجر (to). الصواب: (According to)."], [3, "Harvard University was established just <u>after sixteen years</u> the Pilgrims arrived.", "A. was established", "B. just", "C. after sixteen years", "D. arrived", 2, "ترتيب الكلمات للزمن", "الترتيب الصحيح للكلمات عند تحديد فترة زمنية قبل حدث هو (sixteen years after)."], [3, "Patients suffering from encephalitis have an <u>inflammatory</u> of the brain.", "A. suffering", "B. have", "C. inflammatory", "D. brain", 2, "بعد أداة التنكير", "بعد أداة التنكير (an) نحتاج إلى اسم. الكلمة (inflammatory) صفة، والصواب الاسم (inflammation) أي التهاب."], [3, "Although it can be closely <u>nearly</u> approached, absolute zero cannot be reached experimentally.", "A. Although", "B. nearly", "C. absolute", "D. experimentally", 1, "حشو (Redundancy)", "استخدام (closely) و (nearly) معاً يعتبر حشواً زائداً لأنهما يحملان نفس المعنى في هذا السياق. يجب حذف إحداهما."], [3, "Because helicopters are capable of hovering in midair, they are particularly useful for rescue missions, military <u>operates</u>, and transportation.", "A. Because", "B. hovering", "C. particularly", "D. operates", 3, "التوازي يتطلب اسماً", "قاعدة التوازي. نحتاج إلى اسم ليتماشى مع (missions, transportation). الكلمة (operates) فعل، والصواب (operations)."], [3, "Many states <u>do</u> laws regulating production processes for different types of food products.", "A. do", "B. regulating", "C. processes", "D. products", 0, "فعل مناسب للقوانين", "الفعل المناسب الذي يأتي مع القوانين (laws) هو (make) أو (pass) أو (have) وليس (do)."], [3, "According to the 1978 Bakke decision by the Supreme Court, <u>an</u> university may not use admissions quotas to obtain a racially balanced student body.", "A. an", "B. may not", "C. obtain", "D. racially", 0, "صوت ساكن", "كلمة (university) تبدأ بصوت الياء الساكن وليس بحرف متحرك صوتياً، لذا نستخدم (a) وليس (an)."], [3, "Ester Forbes won the 1943 Pulitzer Prize in American history for her <u>biographer</u> of Paul Revere.", "A. won", "B. in", "C. her", "D. biographer", 3, "سيرة وليس كاتب سيرة", "الكاتبة فازت بجائزة عن (سيرة ذاتية) كتبتها، وليس عن (كاتب سيرة). الصواب (biography)."], [3, "The bill of Rights was added to the Constitution specifically to guarantee certain <u>the</u> individual rights.", "A. was added", "B. specifically", "C. the", "D. rights", 2, "لا حاجة لـ the هنا", "لا يصح استخدام أداة التعريف (the) بعد كلمة (certain) في هذا السياق. الصواب حذف (the)."], [3, "Unlike light from other sources, which travels in all <u>direction</u>, the light from a laser is highly directional.", "A. Unlike", "B. sources", "C. direction", "D. highly", 2, "جمع بعد all", "بعد كلمة (all) يجب استخدام اسم جمع إذا كان الاسم معدوداً. الصواب: (directions)."], [4, "While formerly a member of the sports club, Mr.Teeters ______ regularly.", "A. is used to playing", "B. was used to play", "C. used to play", "D. used to playing", 2, "عادة في الماضي", "للتعبير عن عادة كانت تحدث في الماضي ولم تعد تحدث الآن، نستخدم التركيب (used to + المصدر)."], [4, "Some scientists say it is essential that mankind ______ the amount of air pollution in big cities.", "A. reduce", "B. reduced", "C. be reduced", "D. will reduce", 0, "قاعدة Subjunctive", "بعد التعبيرات مثل (it is essential that)، نستخدم الفعل في المصدر الخالي من الإضافات لجميع الضمائر."], [4, "Having arrived at the football stadium barely in time, ______", "A. the two teams were just starting as we sat down.", "B. we reached our seats just as the game started.", "C. the officials had already blown the whistle for the game to start.", "D. the gatekeeper took our tickets as we passed.", 1, "Dangling Modifier", "شبه الجملة الأولى تفتقر للفاعل، لذا يجب أن يكون الفاعل في الجملة الثانية هو مَن قام بالفعل (نحن - we)."], [4, "______ the rhinoceros is carefully protected, it will soon go the way of other extinct species.", "A. If", "B. Therefore", "C. As long as", "D. Unless", 3, "شرط منفي", "المعنى هو الشرط المنفي (ما لم يتم حمايته بعناية، سينقرض). الكلمة المناسبة هي (Unless)."], [4, "Most of the courses at the banquet were completely consumed, but there ______ food still remaining.", "A. were few", "B. was little", "C. were a few", "D. was a little", 3, "كمية قليلة باقية", "كلمة (food) غير معدود فتأخذ (was). للإشارة لوجود 'كمية قليلة باقية' نستخدم (a little) وليس (little) التي تفيد النفي المطلق."], [4, "A person probably picks up any language most easily ______ it as a child outside a classroom.", "A. learn", "B. to learn", "C. by learning", "D. for learning", 2, "حرف جر يعبر عن الوسيلة", "للتعبير عن 'طريقة' أو 'وسيلة' فعل شيء ما، نستخدم حرف الجر (by) متبوعاً بـ (V+ing)."], [4, "The boys' father built them a large sandbox ______", "A. to play in", "B. to play in it", "C. to play in there", "D. in which to play in there", 0, "التعبير عن الغرض", "نستخدم صيغة (to + infinitive) للتعبير عن الغرض، ونضع حرف الجر (in) في النهاية ليعود على (sandbox)."], [4, "This beach is usually closed ______ a rainy day.", "A. in", "B. on", "C. at", "D. while", 1, "حرف الجر مع الأيام", "تُستخدم أداة الجر (on) قبل الأيام، حتى ولو كانت متبوعة بصفة (a rainy day)."], [4, "The movie was very boring and many people began to leave early. By the end, most people ______", "A. had already left", "B. were already leaving", "C. were already left", "D. had already been leaving", 0, "حدث اكتمل في الماضي", "وجود عبارة (By the end) يدل على اكتمال حدث قبل وقت محدد في الماضي، وهذا يتطلب استخدام الماضي التام (had + V3)."], [4, "The little boy first took off one shoe and then took off ______", "A. other", "B. another", "C. the other", "D. each other", 2, "الشيء الثاني المتبقي", "عندما نتحدث عن زوجين من الأشياء (مثل الحذاء)، نشير للأول بـ (one) والثاني المتبقي بـ (the other) أي 'الآخر'."], [4, "That's not the butcher we always buy our meat from; you've gone to ______ one.", "A. wrong", "B. a wrong", "C. the wrong", "D. some wrong", 2, "معرف بأداة التعريف", "نستخدم أداة التعريف (the) لأننا نشير لشيء محدد ومعروف من السياق 'الجزار الخاطئ'."], [4, "After years of great unhappiness in her life, Mrs. Palmer one day just seemed to go ______", "A. mad", "B. madly", "C. madder", "D. madness", 0, "فعل ربط (Linking Verb)", "الفعل (go) يعمل هنا كفعل ربط بمعنى 'أصبحت'، ويتبعه صفة لوصف الفاعل. الصفة هي (mad)."], [4, "The police are accusing this businessman of having his store ______ up so that he could collect the insurance.", "A. blow", "B. blown", "C. blew", "D. blowing", 1, "صيغة السببية (Causative)", "صيغة السببية المبنية للمجهول تتكون من (have + مفعول به + V3). المتجر لم ينفجر بنفسه بل تم تفجيره (blown)."], [4, "Hardly ever ______ get a good job these days without a good education.", "A. people might", "B. do people", "C. people can", "D. have people", 1, "عملية القلب (Inversion)", "الجملة تبدأ بظرف منفي (Hardly ever)، مما يستوجب تقديم الفعل المساعد على الفاعل (do people)."], [4, "The Joneses' corn did very well this year, so at harvest time they gave us quite ______", "A. many of them", "B. a few of them", "C. much of it", "D. a lot of it", 3, "اسم غير معدود في الإثبات", "الذرة اسم غير معدود فيعوض عنه بـ (it). وللتعبير عن الكثرة في جملة إثبات، نستخدم (a lot of) كخيار أفضل من (much)."], [4, "Randolph is the boy <u>whom</u> I think scored the winning points for the basketball team.", "A. whom", "B. I think", "C. scored", "D. winning", 0, "ضمير فاعل عاقل", "ضمير الوصل يحل محل الفاعل للفعل (scored). ضمير الفاعل للعاقل هو (who) وليس (whom)."], [4, "Henry likes to get up <u>tomorrow</u> morning at 7:30, but he'll have to rise a couple of hour earlier...", "A. tomorrow", "B. at 7:30", "C. have to rise", "D. earlier", 0, "عادة متكررة", "الفعل (likes to get up) يعبر عن عادة، فلا يصح تخصيصه بيوم محدد في المستقبل. الصواب: (every)."], [4, "Each of the luxury cars in the showroom was quickly sold to <u>their</u> new owner.", "A. Each", "B. was", "C. quickly sold", "D. their", 3, "Each تعامل كمفرد", "كلمة (Each) تعامل معاملة المفرد، لذا ضمير الملكية يجب أن يكون مفرداً. الصواب: (its)."], [4, "Florida has long been well-known for <u>it's</u> excellent citrus fruits and warm climate.", "A. has long been", "B. well-known", "C. it's", "D. warm", 2, "صفة الملكية", "الكلمة المكتوبة هي اختصار لـ (it is)، بينما السياق يتطلب صفة الملكية لغير العاقل. الصواب: (its)."], [4, "<u>Almost</u> of the trees in this plantation have had to be cut down and burned...", "A. Almost", "B. of the trees", "C. have had to be", "D. cut down", 0, "بعدها حرف جر", "لا يمكن أن تتبع (Almost) بحرف الجر (of) مباشرة. الصواب أن نقول (Most) أو (Almost all)."], [4, "If only man had been a bit less greedy, more bird and animal species might have been <u>avoided</u> extinction.", "A. had been", "B. less greedy", "C. might have been", "D. avoided", 3, "المبني للمجهول خطأ", "الجملة مبنية للمجهول بينما الحيوانات هي من تقوم بتجنب الانقراض. الصواب بناؤها للمعلوم (might have avoided)."], [4, "The police <u>has</u> not decided whether or not to charge the four young men...", "A. has", "B. whether", "C. to charge", "D. young men", 0, "جمع دائم", "كلمة (police) تُعامل معاملة الجمع دائماً، لذا الفعل المساعد يجب أن يكون للجمع. الصواب: (have)."], [4, "As soon as we've finished supper, we'll all go <u>to</u> downtown to see The Sound of Music.", "A. As soon as", "B. we've finished", "C. to", "D. to see", 2, "ظرف مكان", "كلمة (downtown) تُستخدم كظرف مكان ولا يسبقها حرف جر للحركة. الصواب: حذف كلمة (to)."], [4, "Tomorrow we will discuss your oral reports and review your preparations for them, as well as <u>arranging</u> the schedule...", "A. will discuss", "B. for them", "C. as well as", "D. arranging", 3, "قاعدة التوازي", "قاعدة التوازي. الفعل معطوف على الأفعال السابقة (discuss, review) وهي في المصدر. الصواب: (arrange)."], [4, "While in Munich, visitors have the opportunity to do a great many things, such as going to concerts and museums and going <u>to shopping</u> and sightseeing.", "A. While", "B. such as", "C. going", "D. to shopping", 3, "مصطلح الذهاب للتسوق", "المصطلح الصحيح للذهاب للتسوق هو (go shopping). الصواب: حذف كلمة (to)."], [4, "Dr. Edwards has repeatedly advised Henry to stop <u>to smoke</u>, if he hopes to stay in good health.", "A. repeatedly", "B. to smoke", "C. if he hopes", "D. to stay", 1, "الإقلاع عن العادة", "الفعل (stop to V) يعني التوقف لفعل شيء آخر. بينما (stop + V-ing) يعني الإقلاع عن عادة. الصواب: (smoking)."], [4, "It's claimed that all things come at last to <u>he</u> who is patient and waits for them.", "A. It's claimed", "B. at last", "C. he", "D. waits", 2, "مفعول به بعد حرف الجر", "الكلمة تقع بعد حرف الجر (to)، لذا يجب أن تكون في حالة المفعول به. الصواب: (him)."], [4, "<u>As</u> you know that water is a compound produced from the reaction between hydrogen and oxygen.", "A. As", "B. that", "C. produced", "D. between", 0, "ازدواج الروابط", "وجود (As) مع (that) يجعل الجملة تابعة وبدون فكرة رئيسية مكتملة. الصواب: حذف (As)."], [4, "The 6-year-old boy resembles <u>to</u> his mother somewhat more than does his older brother.", "A. 6-year-old boy", "B. to", "C. somewhat more than", "D. does", 1, "فعل متعدي", "الفعل (resemble) بمعنى (يشبه) فعل متعدٍ لا يحتاج إلى حرف جر ليأخذ مفعولاً به. الصواب: حذف (to)."], [4, "Jane worried that the newsstand would have run out of copies of the evening paper..., but found that it still had <u>very much</u> left.", "A. worried", "B. run out", "C. still had", "D. very much", 3, "المعدود", "نحن نتحدث عن عدد (copies) وهي معدودة، فلا يمكن استخدام (much). الصواب (many) أو (a lot)."], [4, "There is the very real possibility that these animals could panic and <u>frightened</u>, should there be a sudden loud noise.", "A. very real possibility", "B. could panic", "C. frightened", "D. should there be", 2, "التوازي مع المصدر", "قاعدة التوازي. يجب أن يتوافق الفعل مع (panic) وهو في المصدر. الصواب: (be frightened)."], [4, "The politician's comments on his opponents were extremely critical <u>at</u> what he termed their bias and unfairness.", "A. comments on", "B. extremely", "C. at", "D. termed", 2, "حرف الجر مع الصفة", "الصفة (critical) تُتبع بحرف الجر (of) بمعنى 'منتقد لـ'. الصواب: (critical of)."], [4, "To balance next year's budget, the government needs either to increase taxes greatly or <u>it has to slash</u> spending.", "A. To balance", "B. needs", "C. it has to slash", "D. spending", 2, "التوازي مع either... or", "لتطبيق قاعدة التوازي مع (either... or)، يجب أن يكون الشكل مطابقاً. لدينا (to increase)، الصواب: (to slash)."], [4, "Prior to leaving <u>for abroad</u> on his new assignment, Mr. Peters underwent special orientation sessions...", "A. for abroad", "B. assignment", "C. underwent", "D. orientation sessions", 0, "abroad ظرف مكان", "كلمة (abroad) تعامل كظرف مكاني، فلا يصح استخدام حرف الجر (for) قبلها. الصواب: (going abroad) أو (leaving for...)."], [4, "From a chemical standpoint, any number of materials would be suitable for our purpose; for example, <u>take</u> gold or silver...", "A. From", "B. take", "C. or", "D. expensive", 1, "أسلوب غير أكاديمي", "استخدام فعل الأمر (take) هنا يقطع ترابط الجملة ويجعلها غير قواعدية. الصواب استبدالها بـ (such as)."], [4, "Roy was severely scolded by his father for running in <u>the front of</u> the car while chasing his ball into the street.", "A. scolded", "B. for running", "C. the front of", "D. into", 2, "خارج أم داخل السيارة؟", "العبارة (in the front of) تعني الجزء الأمامي الداخلي. المقصود أنه يجري بالخارج، والصواب: (in front of)."], [4, "Following the holiday week end, the director discovered to his shock that a large part of the laboratory's costly new <u>equipments</u> had been removed.", "A. Following", "B. to his shock", "C. costly", "D. equipments", 3, "اسم غير معدود", "كلمة المعدات (equipment) اسم غير معدود ولا يُجمع بإضافة (s). الصواب: (equipment)."], [4, "All of a sudden, Katherine gave a shriek and rushed off to the kitchen, where she could smell her cakes <u>burn</u>.", "A. All of a sudden", "B. rushed off", "C. could smell", "D. burn", 3, "بعد أفعال الحواس", "بعد أفعال الحواس مثل (smell)، نستخدم الفعل مضافاً له (ing) للتعبير عن حدث مستمر أثناء ملاحظته. الصواب: (burning)."], [4, "One of the fishermen was describing for anyone who cared to listen how a great <u>huge</u> wave struck his boat and nearly turned it over.", "A. was describing", "B. cared to listen", "C. huge", "D. turned it over", 2, "حشو (Redundancy)", "الصفتان (great) و (huge) تحملان نفس المعنى هنا، فاستخدامهما معاً يعتبر حشواً تكرارياً. الصواب حذف إحداهما."], [4, "The governor is expected to return <u>back</u> to his office from his short holiday trip by Sunday evening at the latest.", "A. back", "B. to his office", "C. from his short holiday", "D. at the latest", 0, "تكرار المعنى", "الفعل (return) يحمل ضمنياً معنى العودة، فلا حاجة لاستخدام كلمة (back). الصواب: حذف كلمة (back)."], [5, "What does the passage mainly discuss?", "A. Features that characterize the typical North American city", "B. The development of suburbs in North America", "C. Major differences between United States and Canadian cities", "D. Population migration toward newer cities", 2, "الفكرة الرئيسية", "القطعة تقارن وتوضح الفروق بين المدن الكندية والأمريكية."], [5, "What does the author mean by referring to the truly North American city as more a myth than a reality?", "A. Commonly studies histories of cities distort reality.", "B. Cities in Canada and the United States exhibit cultural similarities.", "C. There is no city that can be considered representative of all North American cities.", "D. Eastern and western cities display greater differences...", 2, "أسطورة غير حقيقية", "تعني أنه لا توجد مدينة واحدة تمثل خصائص كل مدن أمريكا الشمالية لأن الاختلافات كبيرة."], [5, "According to paragraph 2, which of the following statements about the typical Canadian city is true?", "A. Canadian cities are spread out over a large area.", "B. Canadian cities very little in size.", "C. People and functions in Canadian cities are centrally concentrated.", "D. Canadian cities have taller buildings than other countries.", 2, "الكثافة في المركز", "ذكر الكاتب أن المدن الكندية أكثر إحكاماً والوظائف تتركز في المركز."], [5, "The phrase 'the rule' in the passage is closest in meaning to", "A. spacious", "B. practical", "C. well-built", "D. usual", 3, "القاعدة / المعتاد", "تعني القاعدة أو الشيء المعتاد (usual)."], [5, "It can be inferred from the passage that Canadian cities are marked by", "A. narrow streets", "B. open spaces", "C. an absence of skyscrapers", "D. a coherent central area", 3, "مركز متماسك", "يُفهم من النص أن لديهم منطقة مركزية متماسكة وتعتمد على النقل العام."], [5, "The word 'apparent' in the passage is closest in meaning to", "A. unique", "B. obvious", "C. decreasing", "D. dependent", 1, "واضح / جلي", "تعني واضح أو جلي (obvious)."], [5, "The word 'pronounced' in the passage is closest in meaning to", "A. strong", "B. recent", "C. divisive", "D. growing", 0, "قوي / ملحوظ", "تعني قوي أو بارز (strong)."], [5, "It can be inferred from the passage that, when compared to their Canadian counterparts, middle-income people in the United States tend to", "A. move away from city centers more frequently", "B. represent a greater range of income", "C. prefer living closer to urban amenities", "D. dominate the older eastern cities", 0, "الهروب للضواحي", "الأمريكيون يميلون للهروب من مركز المدينة إلى الضواحي (flight to the suburbs) أكثر من الكنديين."], [5, "The word 'it' in the passage refers to", "A. flight to the suburbs", "B. Canadian city", "C. social stability", "D. United States counterpart", 1, "المدينة الكندية", "تشير إلى (Canadian city) التي لا تمتلك المنافسة من مدن الضواحي."], [5, "The word 'fragment' in the passage is closest in meaning to", "A. hold down", "B. break up", "C. characterize", "D. distinguish", 1, "يُجزئ / يفتت", "تعني يكسر أو يجزئ (break up)."], [5, "Which of the following does the author mention as a similarity between Canadian and United States cities?", "A. The size of the land area", "B. The quality of mass transportation", "C. The density of buildings in city centers", "D. The resistance to constructing new roadways", 3, "التشابه المذكور", "ذكر الكاتب أن كلاهما لديه مقاومة أو ممانعة لبناء طرق سريعة جديدة في بعض الأحيان."], [5, "The passage focuses on which of the following aspects of Native American building?", "A. Materials used for construction", "B. Heating and cooling techniques", "C. The effect of engineering techniques on the appearance", "D. Protection from groundwater, insects, and snakes", 1, "تقنيات التدفئة والتبريد", "القطعة تركز على كيفية تحكمهم في التدفئة والتبريد داخل المنازل."], [5, "The phrase 'at bay' in the passage is closest in meaning to", "A. in balance", "B. on purpose", "C. under control", "D. by coincidence", 2, "تحت السيطرة", "تعبير keep something at bay يعني إبقاؤه تحت السيطرة (under control)."], [5, "Which of the following is mentioned as an advantage of a dwelling built below ground level?", "A. It stayed dry.", "B. It looked attractive.", "C. It could be heated easily.", "D. It was inexpensive to build.", 2, "ميزة تحت الأرض", "ذكرت القطعة أنه كلما كان المبنى تحت الأرض كان تسخينه أسهل (easier to heat)."], [5, "The phrase 'soaked up' in the passage is closest in meaning to", "A. equaled", "B. absorbed", "C. renewed", "D. resembled", 1, "امتصّت", "تعني تمتص (absorbed) الحرارة من الشمس."], [5, "It can be inferred that which of the following was done to tents in the northern Plains during warm weather?", "A. The grass was removed from the space between the animal skins and the liner.", "B. The animal skins were replaced with new ones.", "C. The earthen floors were renewed.", "D. The airflow through the roof was reduced.", 0, "في الطقس الحار", "في الطقس البارد كانوا يضعون العشب للعزل، يُفهم أنه في الطقس الحار يتم إزالة هذا العشب الجاف."], [5, "The purpose of an arbor was to", "A. provide shade", "B. grow food", "C. resist wind", "D. support beams", 0, "الغرض من العريشة", "ذكرت القطعة أنها هياكل مظللة (shaded) لتوفير الظل وتخفيف الحرارة."], [5, "The word 'split' in the passage is closest in meaning to", "A. divided", "B. beneficial", "C. plentiful", "D. wet", 0, "مفلوق / مقسوم", "تعني مقسوم أو مجزأ (divided)."], [5, "The word 'scorching' in the passage is closest in meaning to", "A. typical", "B. variable", "C. relatively humid", "D. exceedingly hot", 3, "حارق / شديد الحرارة", "إجابة هذا السؤال كانت مفقودة في مفتاح الكتاب وتم استنتاجها. تعني حار جداً (exceedingly hot)."], [5, "Which of the following is mentioned as a building technique used by groups that lived in humid areas?", "A. Subterranean construction", "B. Earthen floors", "C. Thick walls", "D. Deep eaves", 3, "المناطق الرطبة", "إجابة هذا السؤال كانت مفقودة في مفتاح الكتاب وتم استنتاجها. استخدموا حواف متدلية عميقة (deep eaves)."], [5, "In which of the following areas did Native Americans fill double walls with insulating material?", "A. The Southwest", "B. The Aleutian Islands", "C. The southern Plains", "D. Florida", 1, "الجدران المزدوجة", "إجابة هذا السؤال كانت مفقودة في مفتاح الكتاب وتم استنتاجها. استخدموها في جزر ألوتيان."], [5, "The author organizes the discussion of Native American building techniques in terms of", "A. the order of their development from ancient to modern times", "B. a comparison of their effectiveness in large and small buildings", "C. a comparison of traditional and modern techniques", "D. the differences caused by regional climate conditions", 3, "تنظيم النص", "إجابة هذا السؤال كانت مفقودة في مفتاح الكتاب وتم استنتاجها. الكاتب قسمها حسب ظروف المناخ الإقليمية المختلفة."], [5, "From the first sentence in the passage, it can be inferred that many predators prefer", "A. small prey", "B. dead prey", "C. complex prey", "D. active prey", 3, "يفضلون الفريسة النشطة", "بما أن المفترس يفقد اهتمامه إذا تظاهرت الفريسة بالموت، فهو يفضل الفريسة النشطة والمتحركة."], [5, "How is feigning death an 'antipredator mechanism'?", "A. It frightens a predator.", "B. It allows the prey to prepare a surprise attack.", "C. It causes a predator to lose interest.", "D. It distracts a predator, allowing prey to escape unnoticed.", 2, "التظاهر بالموت", "يجعل المفترس يفقد اهتمامه (lose interest) ويبتعد."], [5, "For which of the following reasons does a hognose snake expand the front third of its body and head?", "A. To hide the back portion of its body", "B. To protect its head from being attacked", "C. To make its body appear larger than it actually is", "D. To increase its strength in order to strike a predator", 2, "توسيع الرأس", "لتجعل نفسها تبدو أكبر حجماً لإخافة المفترس."], [5, "The word 'It' in the passage refers to", "A. the hognose", "B. the predator", "C. head", "D. a hood", 0, "الثعبان", "تشير إلى الثعبان (the hognose)."], [5, "All of the following are part of bluffing EXCEPT", "A. rolling over", "B. making false strikes", "C. hissing", "D. forming a hood", 0, "الاستلقاء على الظهر", "التدحرج على الظهر يمثل مرحلة 'التظاهر بالموت' وليس مرحلة 'الخداع/التخويف' (bluffing)."], [5, "When does the hognose snake feign death?", "A. Immediately upon seeing a predator", "B. When attempts to bluff a predator fail", "C. After it has injured a predator", "D. When the predator begins to lose interest", 1, "متى تتظاهر بالموت؟", "عندما تفشل محاولات التخويف ويتم استفزازها أكثر."], [5, "The author mentions the snake's tongue hanging out loosely as an example of", "A. how the snake provokes a predator", "B. what happens when the snake flattens its head", "C. the snake's recovery", "D. how the snake pretends to be dead", 3, "اللسان المتدلي", "كمثال على كيفية تظاهر الثعبان بالموت بإتقان."], [5, "The word 'monitored' in the passage is closest in meaning to", "A. defined", "B. published", "C. controlled", "D. observed", 3, "مراقبة", "تعني تمت مراقبتها أو ملاحظتها (observed)."], [5, "The experiments described in paragraph 2 measured how long it took for snakes to", "A. notice a predator", "B. stop feigning death", "C. learn how to feign death", "D. recover from the attack of a predator", 1, "مدة التعافي", "قاست التجارب مدة 'التعافي' أي التوقف عن التظاهر بالموت والزحف بعيداً."], [5, "The phrase 'capable of using' in the passage is closest in meaning to", "A. able to use", "B. required to use", "C. supposed to use", "D. thought to use", 0, "قادر على", "تعني قادر على استخدام (able to use)."], [5, "Which of the following is a subtle assessment made by young snakes that is mentioned in the passage?", "A. The difference between a stuffed owl and a real owl", "B. How far a predator is located", "C. Whether or not they are being observed", "D. The difference between an owl and a human", 2, "التقييم الدقيق", "كانوا يلاحظون ما إذا كان الشخص ينظر إليهم (يُراقبون) أم أنه أدار عينيه."], [5, "What aspect of music in the 1920's in the United States does the passage mainly discuss?", "A. The growth of musical theater", "B. The effect of technology on the popular music industry", "C. Technological advances in sound recording for film", "D. The influence of professional songwriters on popular music", 1, "تأثير التكنولوجيا", "القطعة تناقش كيف أثرت التطورات التكنولوجية على صناعة الموسيقى الشعبية."], [5, "The word 'establishment' in the passage is closest in meaning to", "A. necessity", "B. formation", "C. connection", "D. enrichment", 1, "تأسيس", "تعني تكوين أو تأسيس (formation)."], [5, "Which of the following is NOT mentioned as a technological development of the 1920's?", "A. The public-address system", "B. Film sound tracks", "C. Magnetic recording tape", "D. The electrical recording process", 2, "التسجيل المغناطيسي", "لم يتم ذكر شرائط التسجيل المغناطيسية في التطورات التكنولوجية المذكورة في القطعة."], [5, "According to the passage, what was the importance of the microphone and the sound amplifier mentioned in paragraph 1?", "A. They caused major changes in the creation and performance of popular music.", "B. They helped the performance of people who were not professionals.", "C. They were used to preserve a historical record of older styles.", "D. They helped performers meet audience demand for louder music.", 0, "أهمية الميكروفون", "أحدثا تأثيراً كبيراً في طبيعة الأداء وأسلوب الغناء."], [5, "The word 'consequently' in the passage is closest in meaning to", "A. otherwise", "B. in fact", "C. therefore", "D. although", 2, "وبالتالي", "تعني وبالتالي أو نتيجة لذلك (therefore)."], [5, "The word 'it' in the passage refers to the", "A. audience", "B. process", "C. importance", "D. commercialism", 1, "على ماذا تعود it؟", "العملية (process) التي زادت من أهمية الاحترافية هي التي زادت التجارية أيضاً."], [5, "The word 'heighten' in the passage is closest in meaning to", "A. consider", "B. announce", "C. increase", "D. adjust", 2, "يزيد / يرفع", "تعني يزيد أو يرفع (increase)."], [5, "Why does the passage mention New York City in paragraph 2?", "A. It was a major center for the invention of new technology.", "B. It had a significant concentration of performing, composing, and music business activity.", "C. It had the broadest range of audiences.", "D. It was the source of a popular regional style of music.", 1, "أهمية نيويورك", "لأنها كانت المركز الذي تتجمع فيه كل أنشطة وعروض وتسجيلات الموسيقى."], [5, "What is the new development that the author discusses in paragraph 3?", "A. A blending of traditional musical styles occurred.", "B. Popular music performers began to avoid using elements of traditional music.", "C. The center of the recording industry moved south.", "D. Music styles formerly known only to a few people became known to many people.", 3, "التطور الجديد", "أنواع الموسيقى الإقليمية التي كان يسمعها قليلون أصبحت متاحة للجميع بفضل التسجيلات والراديو."], [5, "The word 'previously' in the passage is closest in meaning to", "A. before", "B. there", "C. inexpensively", "D. significantly", 0, "سابقاً", "تعني في السابق أو قبل ذلك (before)."], [5, "The word 'era' in the passage is closest in meaning to", "A. period", "B. nation", "C. movement", "D. book", 0, "حقبة", "تعني حقبة أو فترة زمنية (period)."], [5, "The main subject of the passage is", "A. Melville's travels", "B. The popularity of Melville's novels", "C. Melville's personal background", "D. Moby Dick", 1, "موضوع القطعة", "<span class='text-red-600 font-bold'>الإجابة العلمية الصحيحة (B)</span>. لكن إجابة الكتاب الرسمية الخاطئة كانت (D Moby Dick). اختر D للحصول على الدرجة هنا."], [5, "According to the passage, Melville's early novels were", "A. Published while he was traveling", "B. Completely fictional", "C. All about his work on whaling ships", "D. Based on his travels", 3, "رواياته المبكرة", "الروايات المبكرة كانت مبنية على رحلاته وأسفاره."], [5, "In what year did Melville's book about his experience as a cabin boy appear?", "A. 1837", "B. 1841", "C. 1847", "D. 1849", 0, "خطأ في نموذج الكتاب", "<span class='text-red-600 font-bold'>الإجابة العلمية الصحيحة D (1849)</span>. لكن نموذج إجابة الكتاب اختار A (1837) والتي تمثل سنة سفره. اختر A للحصول على الدرجة."], [5, "The passage implies that Melville stayed in Tahiti because", "A. He had unofficially left his ship", "B. He was on leave while his ship was in port", "C. He had finished his term of duty", "D. He had received permission to take a vacation in Tahiti", 2, "لماذا بقي في تاهيتي؟", "<span class='text-red-600 font-bold'>الإجابة العلمية A (jumping ship)</span>. لكن الكتاب اختار بالخطأ C. اختر C للحصول على الدرجة."], [5, "How did the publication of Moby Dick affect Melville's popularity?", "A. His popularity increased immediately", "B. It had no effect on his popularity", "C. It caused his popularity to decrease", "D. His popularity remained as strong as ever", 3, "تأثير موبي ديك", "<span class='text-red-600 font-bold'>الإجابة العلمية C (بدأت شعبيته تقل)</span>. لكن نموذج الكتاب المترهل اختار D. للحصول على الدرجة اختر D."], [5, "According to the passage, Moby Dick", "A. Is a romantic adventure", "B. Is a single-faceted work", "C. Is a short story about a whale", "D. Is symbolic of man fighting his environment", 1, "موبي ديك رمزية لـ", "<span class='text-red-600 font-bold'>الإجابة العلمية D</span> (عمل رمزي لصراع الإنسان). لكن نموذج الكتاب اختار بالخطأ B. للحصول على الدرجة اختر B."]];
+        const passages = {"Reading 2 - Passage 1": "The city is a global phenomenon. It is also a regional and cultural variable. Even within the seemingly homogenous North American cultural realm, the city shows subtle but significant differences... (Refer to the original book for the full text of the passage about Canadian and US cities).", "Reading 2 - Passage 2": "Over many centuries Native American builders developed ways to keep the cold, rain, wind, and heat at bay. Traditional techniques for warming or cooling were sometimes part of the hidden engineering of a dwelling... (Refer to the original book for the full text of the passage about Native American dwellings).", "Reading 2 - Passage 3": "Because many predators kill only when their prey is moving, an animal that pretends to be dead may succeed in causing a predator to lose interest and move along in search of more lively prey... (Refer to the original book for the full text of the passage about hognose snakes).", "Reading 2 - Passage 4": "The 1920's saw major developments in popular music in the United States. Some of the most important were technological: the establishment of commercial radio stations and the development of the public-address system... (Refer to the original book for the full text of the passage about popular music in the 1920s).", "Reading 2 - Passage 5": "Herman Melville, an American author best known today for his novel Moby Dick, was actually more popular during his lifetime for some of his other works. He traveled extensively... (Refer to the original book for the full text of the passage about Herman Melville)."};
+        
+        const sectionNames = { 
+            3: "Structure 3 (Part A & B)", 
+            4: "Structure 4 & Reading 2", 
+            5: "Reading Comprehension 2" 
+        };
+        
+        let currentIdx = 0;
+        let userAnswers = new Array(rawData.length).fill(null);
+        let sectionScores = { 3: {c:0, t:0}, 4: {c:0, t:0}, 5: {c:0, t:0} };
+
+        function startQuiz() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('hidden');
+            document.getElementById('quizScreen').classList.add('flex');
+            loadQuestion(0);
+        }
+
+        function loadQuestion(idx) {
+            currentIdx = idx;
+            const q = rawData[idx];
+            
+            document.getElementById('qCurrent').textContent = idx + 1;
+            document.getElementById('progressBar').style.width = `${((idx + 1) / rawData.length) * 100}%`;
+            document.getElementById('sectionBadge').textContent = sectionNames[q[0]];
+            
+            const passContainer = document.getElementById('passageContainer');
+            // Reading questions start from index 80 (since structure 3 = 40, structure 4 = 40)
+            if (idx >= 80) {
+                passContainer.classList.remove('hidden');
+                passContainer.classList.add('block');
+                
+                let passKey = "Reading 2 - Passage 1";
+                if(idx >= 91) passKey = "Reading 2 - Passage 2";
+                if(idx >= 102) passKey = "Reading 2 - Passage 3";
+                if(idx >= 113) passKey = "Reading 2 - Passage 4";
+                if(idx >= 124) passKey = "Reading 2 - Passage 5";
+                
+                document.getElementById('passageText').textContent = passages[passKey];
+            } else {
+                passContainer.classList.add('hidden');
+                passContainer.classList.remove('block');
+            }
+
+            document.getElementById('questionText').innerHTML = q[1];
+            
+            const optsContainer = document.getElementById('optionsContainer');
+            optsContainer.innerHTML = '';
+            
+            const options = [q[2], q[3], q[4], q[5]];
+            options.forEach((optText, i) => {
+                const btn = document.createElement('button');
+                btn.className = `opt-btn w-full text-left dir-ltr p-4 rounded-xl border-2 border-slate-200 bg-white font-medium text-slate-700 shadow-sm block`;
+                btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-slate-100 text-slate-600 text-center leading-8 mr-3 font-bold pointer-events-none">${String.fromCharCode(65+i)}</span> ${optText.substring(3)}`;
+                btn.onclick = () => handleAnswer(i);
+                
+                if (userAnswers[idx] !== null) {
+                    btn.disabled = true;
+                    if (i === q[6]) {
+                        btn.classList.add('correct', 'border-green-500', 'bg-green-50');
+                        btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-green-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none"><i class="fa-solid fa-check"></i></span> ${optText.substring(3)}`;
+                    } else if (i === userAnswers[idx]) {
+                        btn.classList.add('wrong', 'border-red-400', 'bg-red-50');
+                        btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-red-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none"><i class="fa-solid fa-xmark"></i></span> ${optText.substring(3)}`;
+                    }
+                }
+                optsContainer.appendChild(btn);
+            });
+
+            document.getElementById('hintBox').classList.add('hidden');
+            document.getElementById('hintText').textContent = q[7];
+            document.getElementById('hintBtn').style.display = (userAnswers[idx] === null && q[7]) ? 'flex' : 'none';
+
+            const expBox = document.getElementById('explanationBox');
+            if (userAnswers[idx] !== null) {
+                showExplanation(userAnswers[idx] === q[6]);
+            } else {
+                expBox.classList.add('hidden');
+            }
+
+            document.getElementById('prevBtn').disabled = (idx === 0);
+            
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+            
+            if (idx === rawData.length - 1) {
+                nextBtn.classList.add('hidden');
+                if (userAnswers[idx] !== null) finishBtn.classList.remove('hidden');
+                else finishBtn.classList.add('hidden');
+            } else {
+                finishBtn.classList.add('hidden');
+                if (userAnswers[idx] !== null) nextBtn.classList.remove('hidden');
+                else nextBtn.classList.add('hidden');
+            }
+        }
+
+        function toggleHint() {
+            document.getElementById('hintBox').classList.toggle('hidden');
+        }
+
+        function handleAnswer(selectedIndex) {
+            const q = rawData[currentIdx];
+            userAnswers[currentIdx] = selectedIndex;
+            const isCorrect = (selectedIndex === q[6]);
+            
+            if (isCorrect) sectionScores[q[0]].c++;
+
+            const buttons = document.getElementById('optionsContainer').children;
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].disabled = true;
+                if (i === q[6]) {
+                    buttons[i].classList.add('correct');
+                    buttons[i].querySelector('span').innerHTML = '<i class="fa-solid fa-check"></i>';
+                    buttons[i].querySelector('span').className = "inline-block w-8 h-8 rounded bg-green-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none";
+                } else if (i === selectedIndex) {
+                    buttons[i].classList.add('wrong');
+                    buttons[i].querySelector('span').innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    buttons[i].querySelector('span').className = "inline-block w-8 h-8 rounded bg-red-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none";
+                }
+            }
+
+            document.getElementById('hintBtn').style.display = 'none';
+            document.getElementById('hintBox').classList.add('hidden');
+            showExplanation(isCorrect);
+            
+            if (currentIdx === rawData.length - 1) document.getElementById('finishBtn').classList.remove('hidden');
+            else document.getElementById('nextBtn').classList.remove('hidden');
+        }
+
+        function showExplanation(isCorrect) {
+            const expBox = document.getElementById('explanationBox');
+            const expTitle = document.getElementById('expTitle');
+            const expIcon = document.getElementById('expIcon');
+            const q = rawData[currentIdx];
+
+            expBox.classList.remove('hidden', 'exp-success', 'exp-error');
+            
+            if (isCorrect) {
+                expBox.classList.add('exp-success');
+                expTitle.textContent = "إجابة صحيحة!";
+                expTitle.className = "font-bold text-lg text-green-700";
+                expIcon.className = "fa-solid fa-circle-check text-green-600 ml-2 text-xl";
+            } else {
+                expBox.classList.add('exp-error');
+                expTitle.textContent = "إجابة خاطئة!";
+                expTitle.className = "font-bold text-lg text-red-700";
+                expIcon.className = "fa-solid fa-circle-xmark text-red-600 ml-2 text-xl";
+            }
+            
+            document.getElementById('explanationText').innerHTML = q[8];
+        }
+
+        function changeQuestion(step) {
+            if (currentIdx + step >= 0 && currentIdx + step < rawData.length) {
+                loadQuestion(currentIdx + step);
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizScreen').classList.remove('flex');
+            document.getElementById('quizScreen').classList.add('hidden');
+            
+            const resScreen = document.getElementById('resultScreen');
+            resScreen.classList.remove('hidden');
+            resScreen.classList.add('flex');
+
+            let totalCorrect = 0;
+            for(let key in sectionScores) totalCorrect += sectionScores[key].c;
+            
+            document.getElementById('finalScore').textContent = totalCorrect;
+
+            let percentage = (totalCorrect / rawData.length) * 100;
+            const icon = document.getElementById('resultIcon');
+            const msg = document.getElementById('resultMsg');
+            
+            if(percentage >= 80) {
+                icon.className = "w-24 h-24 rounded-full flex items-center justify-center mb-6 text-5xl shadow-lg bg-green-100 text-green-600";
+                icon.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+                msg.textContent = "ممتاز! أداء رائع يا بطل 🚀";
+                msg.className = "text-2xl font-bold mb-2 text-green-700";
+            } else {
+                icon.className = "w-24 h-24 rounded-full flex items-center justify-center mb-6 text-5xl shadow-lg bg-amber-100 text-amber-600";
+                icon.innerHTML = '<i class="fa-solid fa-thumbs-up"></i>';
+                msg.textContent = "جيد جداً، استمر! 👍";
+                msg.className = "text-2xl font-bold mb-2 text-amber-700";
+            }
+        }
+    </script>
+</body>
+</html>

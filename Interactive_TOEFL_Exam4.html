@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>امتحان التوفل التجريبي الأخير</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f0f4f8; color: #1e293b; overflow-x: hidden; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .opt-btn { transition: all 0.3s ease; }
+        .opt-btn:hover:not(:disabled) { border-color: #3b82f6; background-color: #eff6ff; transform: translateY(-2px); }
+        .opt-btn.correct { background-color: #dcfce7; border-color: #22c55e; color: #166534; font-weight: bold; }
+        .opt-btn.wrong { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .opt-btn:disabled { cursor: default; }
+        .progress-bar-fill { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .passage-scroll::-webkit-scrollbar { width: 6px; }
+        .passage-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .passage-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center py-6 px-4">
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="glass-panel w-full max-w-2xl p-8 rounded-3xl text-center fade-in">
+        <div class="w-24 h-24 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fa-solid fa-flag-checkered text-4xl"></i>
+        </div>
+        <h1 class="text-3xl font-extrabold mb-4 text-slate-800">الامتحان التفاعلي الشامل (الجزء الأخير)</h1>
+        <p class="text-slate-500 mb-8 leading-relaxed">
+            تهانينا! أنت الآن في الامتحان التفاعلي الرابع والأخير الذي يغطي أقسام القراءة المتبقية (Reading 3 & 4) بإجمالي 100 سؤال. بهذا تكون قد أنهيت أسئلة الكتاب بالكامل.
+        </p>
+        
+        <div class="grid grid-cols-2 gap-4 mb-8 text-right text-sm text-slate-600">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <i class="fa-solid fa-list-check text-indigo-500 ml-2"></i> إجمالي الأسئلة: <span class="font-bold text-slate-800">100 سؤال</span>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <i class="fa-solid fa-layer-group text-indigo-500 ml-2"></i> Reading 3 & 4
+            </div>
+        </div>
+        
+        <button onclick="startQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-95 text-lg">
+            ابدأ التحدي الأخير <i class="fa-solid fa-rocket mr-2"></i>
+        </button>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quizScreen" class="glass-panel w-full max-w-2xl rounded-3xl overflow-hidden hidden flex-col relative h-[85vh] sm:h-auto sm:min-h-[600px]">
+        <div class="bg-white px-6 py-4 border-b border-slate-100 flex justify-between items-center z-10 shadow-sm relative">
+            <div class="font-bold text-slate-700">سؤال <span id="qCurrent">1</span> <span class="text-slate-400 text-sm font-normal">من 100</span></div>
+            <div id="sectionBadge" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold tracking-wide">
+                Reading Comprehension
+            </div>
+        </div>
+        
+        <div class="w-full bg-slate-100 h-1.5">
+            <div id="progressBar" class="bg-blue-500 h-1.5 progress-bar-fill w-0"></div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 bg-slate-50 relative pb-24">
+            
+            <div id="passageContainer" class="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 passage-scroll max-h-48 overflow-y-auto shadow-inner">
+                <h3 class="text-amber-800 font-bold mb-2 flex items-center"><i class="fa-solid fa-file-lines ml-2"></i> Reading Passage</h3>
+                <p id="passageText" class="text-amber-900/80 text-sm leading-relaxed text-left dir-ltr font-serif"></p>
+            </div>
+
+            <div class="mb-8">
+                <h2 id="questionText" class="text-xl font-bold text-slate-800 text-left dir-ltr leading-relaxed">Loading...</h2>
+            </div>
+
+            <div class="mb-6 flex justify-end">
+                <button onclick="toggleHint()" id="hintBtn" class="text-amber-500 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center border border-amber-200">
+                    تلميح <i class="fa-regular fa-lightbulb mr-2"></i>
+                </button>
+            </div>
+            <div id="hintBox" class="hidden mb-6 bg-amber-100 text-amber-800 p-4 rounded-xl text-sm border border-amber-200 slide-up">
+                <i class="fa-solid fa-circle-info ml-1"></i> <span id="hintText"></span>
+            </div>
+
+            <div id="optionsContainer" class="space-y-3">
+            </div>
+
+            <div id="explanationBox" class="hidden mt-6 p-5 rounded-2xl slide-up shadow-sm border">
+                <div class="flex items-center mb-2">
+                    <i id="expIcon" class="text-xl ml-2"></i>
+                    <h3 id="expTitle" class="font-bold text-lg"></h3>
+                </div>
+                <p id="explanationText" class="text-sm leading-relaxed"></p>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 border-t border-slate-100 flex justify-between items-center absolute bottom-0 w-full shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
+            <button id="prevBtn" onclick="changeQuestion(-1)" class="px-5 py-2.5 rounded-xl text-slate-500 font-bold hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                <i class="fa-solid fa-arrow-right ml-1"></i> السابق
+            </button>
+            <button id="nextBtn" onclick="changeQuestion(1)" class="px-5 py-2.5 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700 transition-colors shadow-md disabled:opacity-30 disabled:cursor-not-allowed hidden">
+                التالي <i class="fa-solid fa-arrow-left mr-1"></i>
+            </button>
+            <button id="finishBtn" onclick="showResults()" class="px-5 py-2.5 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-colors shadow-md hidden">
+                إظهار النتيجة <i class="fa-solid fa-check-double mr-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="resultScreen" class="glass-panel w-full max-w-2xl p-8 rounded-3xl hidden flex-col items-center">
+        <div id="resultIcon" class="w-24 h-24 rounded-full flex items-center justify-center mb-6 text-4xl shadow-lg"></div>
+        <h2 id="resultMsg" class="text-2xl font-bold mb-2"></h2>
+        
+        <div class="relative w-40 h-40 mb-6 flex items-center justify-center rounded-full border-8 border-slate-100">
+            <div class="text-center">
+                <div class="text-4xl font-black text-slate-800" id="finalScore">0</div>
+                <div class="text-slate-500 text-sm">من 100</div>
+            </div>
+        </div>
+
+        <div class="w-full bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8 text-center">
+            <p class="font-bold text-slate-700 text-lg">ألف مبروك! 🎉</p>
+            <p class="text-slate-500 mt-2">لقد أتممت أسئلة الكتاب بالكامل بنجاح. نتمنى لك التوفيق في اختبارك القادم!</p>
+        </div>
+
+        <button onclick="location.reload()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-lg">
+            إعادة الامتحان <i class="fa-solid fa-rotate-right mr-2"></i>
+        </button>
+    </div>
+
+    <script>
+        const rawData = [[6, "What is the author's main purpose?", "A. To show what color algae is", "B. To differentiate the various classifications of algae", "C. To describe where algae is found", "D. To clarify the appearance of different types of algae", 1, "الغرض الرئيسي هو التفرقة", "الغرض الرئيسي هو التفرقة بين تصنيفات الطحالب (differentiate)."], [6, "Which of the following is NOT true about algae?", "A. All types have one cell only.", "B. It can be found out of water.", "C. It can use photosynthesis.", "D. It is not a relatively new form of life.", 0, "مذكور multiple-celled", "ذكرت القطعة أن هناك أنواع وحيدة الخلية ومتعددة الخلايا."], [6, "The word \"pigment\" at the end of the first paragraph means", "A. Size", "B. Shape", "C. Composition", "D. Color", 3, "صبغة", "تعني صبغة أو لون (Color)."], [6, "Algae remnants found in Africa are", "A. Still flourishing", "B. Photogenic", "C. Extremely old", "D. Red in color", 2, "3.4 مليار سنة", "بقايا عمرها 3.4 مليار سنة أي قديمة جداً (Extremely old)."], [6, "Green algae is generally found", "A. On the ocean floor", "B. On top of the water", "C. Throughout ponds and lakes", "D. Surrounding enclosed bodies of water", 1, "على السطح", "ذكرت القطعة أنها كطبقة على سطح الماء (On top of the water)."], [6, "Brown algae would most likely be found", "A. On trees", "B. Near green algae", "C. On rocks", "D. In the ocean", 3, "قاع المحيط", "تذكر القطعة أنها على قاع المحيط أو تطفو عليه."], [6, "According to the passage, red algae is", "A. Sturdy", "B. Huge", "C. Fragile", "D. Found in shallow water", 2, "رقيقة", "القطعة تصفها بـ delicate أي هشة أو رقيقة (Fragile)."], [6, "It can be inferred from the passage that limestone deposits serve as the basis of", "A. Coral reefs", "B. Red algae", "C. Subtropical seawater", "D. Secret passages", 0, "ترسبات الحجر", "تساعد في تكوين الشعاب المرجانية (Coral reefs)."], [6, "What is the subject of this passage?", "A. The increasing costs of malpractice insurance", "B. Factors causing the increase in U.S. medical bills", "C. Steps for Americans to take to obtain medical care", "D. The outrageous medical profession", 1, "عوامل الزيادة", "تتحدث القطعة عن أسباب زيادة الفواتير الطبية."], [6, "According to the passage, how does the author of this passage feel about the tremendous increase in medical bills?", "A. Disquieted", "B. Enthusiastic", "C. Impassive", "D. Apathetic", 0, "قلق وغير مرتاح", "الكاتب يستخدم كلمات مثل outrageously مما يدل على قلقه واستيائه (Disquieted)."], [6, "How does the author seem to feel about the tremendous increase in medical bills? [Note: Typo in book, options are factors]", "A. Malpractice insurance", "B. The cost of hospital care", "C. More conservative and expensive prescriptions", "D. Inflation", 1, "العامل الأكبر", "السؤال يقصد العامل الرئيسي، وهو تكلفة رعاية المستشفيات."], [6, "The passage implies that a slowing in inflation would have what kind of effect on medical costs?", "A. Tremendous", "B. Nonexistent", "C. Slight", "D. Maximum", 2, "تأثير ضعيف", "بما أن الفواتير ترتفع بمعدل أعلى من التضخم، فتأثيره طفيف (Slight)."], [6, "Which of the following is NOT stated in the passage concerning malpractice?", "A. The increase in malpractice insurance is due to inflation", "B. Malpractice insurance premiums are on the increase", "C. The increase in malpractice payouts has caused an increase in doctors' bills", "D. High malpractice awards have caused doctors to work more conservatively", 0, "علاقة التأمين بالتضخم؟", "لم تذكر القطعة أن التضخم هو سبب زيادة تأمين الأخطاء الطبية."], [6, "What is the author's main point in this passage?", "A. Inflation is having a terrible effect on medical bills", "B. Insurance companies are at fault in raising medical bills", "C. Action is needed to counteract increases in medical bills", "D. Doctors need to work to decrease malpractice", 2, "يجب اتخاذ إجراء", "الكاتب يؤكد على الحاجة لاتخاذ خطوات قوية لعكس هذا المسار."], [6, "What does the paragraph following this passage most likely contain?", "A. A discussion of why the average American will soon be unable to afford medical care", "B. Forecasts of how inflation will influence medical care in the future", "C. The tremendous increases in malpractice insurance", "D. The steps the government could take to curb medical costs", 3, "خطوات الحكومة", "القطعة انتهت بطلب اتخاذ إجراءات قوية، فالفقرة التالية ستناقش هذه الإجراءات."], [6, "What is the best title for the passage?", "A. Thomas Edison's Many Inventions", "B. Improvements in the Telephone and Telegraph", "C. The History of Menlo Park", "D. A Surprise Invention", 3, "اختراع بالصدفة", "بدأت القطعة بـ happened quite by accident أي اختراع مفاجئ."], [6, "According to the passage, the invention of the phonograph", "A. Was quite unplanned", "B. Was Edison's principal project", "C. Was surprising to no one", "D. Took many years", 0, "حدث بالصدفة", "غير مخطط له (unplanned) يعادل accident."], [6, "In what year did the invention of the phonograph occur?", "A. 1876", "B. 1877", "C. 1878", "D. The article does not say", 1, "سنة بعد 1876", "انتقل 1876 وفي المعمل 'بعد عام' (a year later) اخترعه، أي 1877."], [6, "According to the passage, how was the phonograph made?", "A. With a telephone needle and a recorder", "B. From a recording of a telegraph", "C. With only a telegraph repeater", "D. From a combination of telephone and telegraph parts", 3, "أجزاء من هنا وهنا", "ركب diaphragm للتليفون مع إبرة تلغراف."], [6, "According to the passage, how did Edison test his new invention?", "A. He made improvements to the machine", "B. He used a carbon transmitter", "C. He read a children's rhyme", "D. He reproduced the audience's voice", 2, "قرأ أغنية أطفال", "قرأ 'Mary a Little Lamb' وهي قافية أطفال."], [6, "According to the passage, how did people feel when they heard Edison's rendition of \"Mary Had a Little Lamb\"?", "A. Perplexed", "B. Amazed", "C. Aggravated", "D. Detached", 1, "مذهولين", "استخدمت القطعة كلمة astonished وهي تعني Amazed."], [6, "Which of the following is the best topic for this passage?", "A. The Great Pueblo period", "B. A description of the Indian cliff dwellings", "C. What is known and unknown about the cliff dwellings", "D. The Four Corners area of the United States", 2, "المعروف والمجهول", "القطعة تناقش ما نعرفه (موقعها وحجمها) وما نجهله (سبب هجرها)."], [6, "Why did the Four Corners area receive its name?", "A. The area is a square with four corners", "B. The cliff dwellings in the area each have four corners", "C. The Great Pueblo are four-cornered", "D. The corners of four states meet there", 3, "أربع ولايات", "حيث تلتقي ولايات كولورادو ويوتا وأريزونا ونيو مكسيكو."], [6, "According to the passage, when where the cliff dwellings built?", "A. During the Great Pueblo period", "B. After the drought", "C. Sometime before 1050", "D. At the same time that the explorers found them", 0, "فترة بويبلو", "بنيت خلال فترة Great Pueblo."], [6, "According to the passage, what size were the sleeping chambers?", "A. Wide", "B. Small", "C. High", "D. Large", 1, "كانت tiny", "غرف النوم كانت ضيقة جداً (Small)."], [6, "According to the passage, what were the cliff dwellings like when the explorers first found them?", "A. Thriving", "B. Full of daily life", "C. Empty", "D. In a state of drought", 2, "مهجورة", "كانت abandoned أي فارغة (Empty)."], [6, "According to the passage, what do archeologists believe caused the cliff dwellers to abandon their homes?", "A. A lack of food", "B. Warfare with neighboring tribes", "C. A desire to find a safer location", "D. A shortage of water", 3, "الجفاف", "بسبب جفاف خطير (drought) أي نقص المياه."], [6, "According to the passage, which of the following are the authorities certain about?", "A. Why the cliff dwellers abandoned their homes", "B. That a drought occurred in the Four Corners area from 1276 to 1299", "C. Where the inhabitants of the cliff dwellings went", "D. When the cliff dwellers abandoned their homes", 1, "الأدلة تؤكد حدثاً معيناً", "هناك أدلة مؤكدة على حدوث جفاف في تلك الفترة."], [6, "Which of the following is NOT discussed in the passage?", "A. The lifestyle of the cliff dwellers", "B. The size of the cliff dwellings", "C. The mystery surrounding the abandonment of the cliff dwellings", "D. The location of the cliff dwellings", 0, "نمط الحياة", "لم تناقش القطعة تفاصيل نمط حياتهم اليومي."], [6, "The first sentence of the passage means that the rate of interest paid on the loans by students (and their families) is", "A. exactly 9 per cent.", "B. between 1 and 9 per cent.", "C. 9 per cent or more.", "D. Sometimes more and sometimes less than 9 per cent.", 0, "محدد بـ 9", "يقول النص '9 per cent loans' أي بالضبط 9%."], [6, "The money for loans is given to the students by", "A. their colleges or universities.", "B. The national government.", "C. Their banks.", "D. Their families.", 2, "مباشرة من...", "النص يقول 'directly from banks to students'."], [6, "In recent years, use of G.S.L. funds by Bates College's students has apparently increased", "A. hardly at all", "B. only a little", "C. rather steadily", "D. very greatly", 3, "7 أضعاف", "نمت أكثر من 7 أضعاف (sevenfold) أي بشكل كبير جداً."], [6, "According to the passage, one important reason for the recent trend in the use of such loans is the fact that", "A. The number of students has been gradually declining.", "B. The cost of a university education has been steadily increasing.", "C. The banks are trying to reduce this kind of business", "D. Many students have been earning much better grades than before.", 1, "تكلفة التعليم", "بسبب التكلفة المتزايدة للتعليم (increasing cost of education)."], [6, "Another important reason for the recent trend in the use of G.S.L.s is", "A. a decline in the availability of bank loan money.", "B. an increase in the availability of bank loan money.", "C. a decline in the ability of the average American family to pay.", "D. an increase in the ability of the average American family to pay.", 2, "انكماش الدخل", "بسبب انكماش الدخل المتاح للأسرة، أي انخفاض قدرتهم على الدفع."], [6, "According to the article, the increase in the rate of inflation in the U.S. economy over the previous decade was", "A. much greater than that in the cost of a college education.", "B. only a little greater than that in the cost of a college education.", "C. about the same as that in the cost of a college education.", "D. somewhat less than that in the cost of a college education.", 2, "ليست أكبر من...", "يقول النص 'no greater than the inflation rate' أي تقريباً متساوية."], [6, "What does the article say about students unable to pay for their education at American colleges?", "A. The colleges tried to increase the number of such students.", "B. The colleges stopped accepting such students.", "C. The colleges tried to keep such students in their student bodies.", "D. The colleges have never had such students in their student bodies.", 2, "القبول بغض النظر عن الدفع", "الكليات تحاول قبول الطلاب بغض النظر عن قدرتهم على الدفع."], [6, "The reason for Bates College's policy on poor students is that college officials believe that students who cannot afford a college education", "A. are an impossible burden to any college.", "B. should not be denied the opportunity of a college education if they are academically able.", "C. should not attempt to apply to Bates college for a free education.", "D. are unfairly trying to take the place of better qualified students", 1, "فرصة التعليم", "الكليات تقبلهم رغبة في عدم حرمانهم من الفرصة."], [6, "The passage makes clear that the scholarship money which Bates college has comes mainly from", "A. The national government.", "B. The local community's private banks.", "C. The personal contribution of private citizens.", "D. The tuition paid to the college by its student body.", 2, "تبرعات خاصة", "صندوق المنح يأتي من تبرعات خاصة (private donations)."], [6, "Bates College's scholarship fund has increased over the past decade at a rate", "A. a bit lower than the rate of inflation.", "B. a bit faster than the rate of inflation.", "C. much lower than the rate of inflation.", "D. much faster than the rate of inflation.", 3, "من 254 ألف إلى 1.4 مليون", "زيادة ضخمة جداً، أسرع بكثير من التضخم."], [6, "A binary star could best be described as", "A. Stars that have been forced apart", "B. A star with a strong gravitational force", "C. Two stars pulled together by gravity", "D. A large number of attached stars", 2, "نجمان معاً", "هي زوج من النجوم مرتبطة معاً بقوة الجاذبية."], [6, "According to the passage, what happens as a result of the gravitational force between the stars?", "A. One star circles the other", "B. The mass of the binary star increases", "C. A black hole is destroyed", "D. The gravitational force decreases", 0, "المدار", "تسبب أن أحد النجمين يدور حول الآخر."], [6, "According to the passage, what can scientists learn from the pattern of a binary star's orbit?", "A. The proportion of the star's gravitational pull to its mass", "B. How to distinguish the stars that compose a binary", "C. Why there is no light in a black hole", "D. The mass of the stars that compose the binary", 3, "الكتلة", "من نمط المدار يمكن تحديد كتلة النجوم."], [6, "According to the passage, what is a black hole?", "A. An empty space around which nothing orbits", "B. A star with close to zero gravity", "C. A star whose gravitational force blocks the passage of light", "D. An empty space so far away that no light can reach it", 2, "يحجب الضوء", "هو نجم ذو قوة جاذبية هائلة تمنع مرور الضوء."], [6, "Which of the following statements about black holes is NOT true?", "A. A black hole can have a star orbiting around it", "B. A binary star can be composed of a black hole and a visible star", "C. All empty space contains black holes", "D. The gravitational pull of a black hole is strong", 2, "الفضاء الفارغ؟", "القطعة لم تقل إن كل فضاء فارغ يحتوي على ثقوب سوداء."], [6, "This passage would most likely be assigned reading in a course on", "A. Botany", "B. Astrophysics", "C. Geology", "D. Astrology", 1, "مجال علمي يدرس النجوم", "النص يدرس في علم الفيزياء الفلكية (Astrophysics)."], [6, "How could the Finger Lakes be described?", "A. As basically circular", "B. As all the same size", "C. As tiny", "D. As long and thin", 3, "طويلة وضيقة", "توصف بـ long, narrow أي طويلة وضيقة."], [6, "According to the passage, why are these lakes known as Finger Lakes?", "A. They are the same size as fingers", "B. Their shape is similar to a finger's", "C. Their composition is the same as a finger's", "D. There are as many lakes as there are fingers", 1, "تشبه الأصابع", "بسبب تشابهها (resemblance) مع أصابع اليد."], [6, "Why does the author mention Seneca and Cayuga Lakes?", "A. They are the only two Finger Lakes", "B. They are the two largest lakes in the United States", "C. They are good examples of long and narrow Finger Lakes", "D. They are long and wide", 2, "أمثلة لتوضيح التسمية", "يستخدمها كأمثلة (exemplify) لتبرير شكل البحيرات."], [6, "The passage implies that Seneca Lake is", "A. A constant 4 miles wide", "B. At least 4 miles wide at each point", "C. Wider than it is long", "D. Narrower than 4 miles at certain points", 3, "4 ميل في أعرض نقطة", "عرضها 4 أميال في أعرض نقطة، مما يعني أنها أضيق في نقاط أخرى."], [6, "What do most scientists believe caused the formation of the Finger Lakes?", "A. The sea level decreased", "B. Heavy rainfalls flooded the area", "C. The melted glaciers carved out the valleys", "D. Glaciers cut into the land and then melted to fill the valleys", 3, "نحتت ثم ذابت", "الجليد نحت الوديان ومع ذوبانه تشكلت البحيرات."], [7, "This passage mainly discusses", "A. American money from past to present", "B. The English monetary policies in colonial America", "C. The effect of the Revolution on American money", "D. The American monetary system of the seventeenth and eighteenth centuries", 3, "النظام المالي", "تتحدث عن تاريخ النظام المالي الأمريكي في فترة المستعمرات والثورة."], [7, "The passage indicates that during the colonial period, money was", "A. Supplied by England", "B. Coined freely by the colonists", "C. Scarce", "D. Used extensively for trade", 2, "نادر", "النص يبدأ بـ 'there was little money' أي أن المال كان نادراً (Scarce)."], [7, "The Massachusetts Bay Colony was allowed to make coins", "A. Continuously from the inception of the colony", "B. Throughout the seventeenth century", "C. From 1652 until the Revolutionary War", "D. For a short time during one year", 3, "فترة قصيرة", "حصلت على إذن لفترة قصيرة (for a short period in 1652)."], [7, "Which of the following is NOT mentioned in the passage as a substitute for money during the colonial period?", "A. Wampum", "B. Cotton", "C. Tobacco", "D. Beaver furs", 1, "القطن", "القطعة ذكرت جلود القندس والوامبوم والتبغ، ولم تذكر القطن."], [7, "According to the passage, what happened to the American monetary system during the Revolutionary War?", "A. The continental congress issued gold and silver coins", "B. Individual states were not allowed to issue money", "C. So much paper money was circulated that it lost its value", "D. American money replaced trade in goods and foreign coins", 2, "فقدت قيمتها", "طُبع الكثير من النقود الورقية حتى أصبحت بلا قيمة تقريباً (worthless)."], [7, "How was the monetary system arranged in the constitution?", "A. Only the U.S. congress could issue money", "B. The U.S. officially went on a bimetallic monetary system", "C. Various state governments, including Massachusetts, could issue money", "D. The dollar was made the official currency of the U.S.", 0, "حصرياً للكونغرس", "الدستور سمح للكونغرس فقط بإصدار المال."], [7, "According to the passage, which of the following is NOT true about the bimetallic monetary system?", "A. Either gold or silver could be used as official money", "B. Gold could be exchanged for silver at a rate of 16 to 1", "C. The monetary system was based on two metals", "D. It was established in 1792", 1, "نسبة التبديل", "القطعة ذكرت أن نسبة 'الفضة' إلى 'الذهب' هي 16 لـ 1، وليس العكس."], [7, "What is the author's main purpose?", "A. To describe the functions of the parts of the brain", "B. To explain how the brain processes information", "C. To demonstrate the physical composition of the brain", "D. To give examples of human body function", 0, "وظائف الأجزاء", "الكاتب يصف أجزاء المخ الثلاثة ووظيفة كل جزء."], [7, "The passage states that the most massive part of the brain is the", "A. Cerebrum", "B. Cerebellum", "C. Cerebral cortex", "D. Brain stem", 0, "الجزء الأكبر", "القطعة ذكرت أن (Cerebrum) هو الجزء الأكبر بحوالي 85%."], [7, "How does the passage describe the appearance of the cerebral cortex?", "A. As smooth", "B. As 85% of the brain by weight", "C. As a layer of the cerebellum", "D. As ridged", 3, "متعرج", "وصفه بأنه سطح محزز ومجعد (grooved and bumpy) وهو ما يعادل (ridged)."], [7, "According to the passage, which part of the brain analyzes information?", "A. The sensory cortex", "B. The association cortex", "C. The cerebellum", "D. The brain stem", 1, "معالجة المعلومات", "الجزء الذي يتلقى ويراقب ويعالج المعلومات هو (association cortex)."], [7, "The sensory cortex", "A. Senses that messages should be sent out to the muscles", "B. Provides a surface covering for nerve cells", "C. Is where the human process of thinking occurs", "D. Receive and processes information from the senses", 3, "يتلقى الرسائل الحسية", "مسؤول عن تلقي وفك تشفير الرسائل الحسية من الجسم."], [7, "Which of the following is true about the cerebellum?", "A. It is located above the cerebrum", "B. It controls breathing", "C. It is responsible for balance", "D. It is the outside layer of the cerebrum", 2, "التوازن", "القطعة ذكرت أنه يتحكم في التوازن (balance) والوضعية."], [7, "What shape does the brain stem most likely have?", "A. Small and round", "B. Long and thin", "C. Large and formless", "D. Short and flat", 1, "شكل الجذع", "بما أنه يسمى 'جذع' ويربط المخ بالحبل الشوكي، فهو على الأرجح طويل ورفيع."], [7, "According to the passage, Dorothy Parker was NOT famous for", "A. Poetry", "B. Humor", "C. Book reviews", "D. Autobiography", 3, "السيرة الذاتية", "كانت شاعرة، كاتبة قصص قصيرة، وناقدة، ولم تذكر القطعة السيرة الذاتية."], [7, "Dorothy Parker's first job was", "A. For a women's magazine", "B. As a literary critic", "C. For The New Yorker", "D. As a short story writer", 0, "مجلة نسائية", "أول عمل مأجور لها كان في مجلة نسائية."], [7, "In line 7, the word \"recurrent\" could best be replaced by which of the following?", "A. Related", "B. Repeated", "C. Flowing", "D. Negative", 1, "متكرر", "تعني متكرر (Repeated)."], [7, "In what year did \"New Item\" appear?", "A. 1916", "B. 1926", "C. 1928", "D. 1931", 1, "سنة النشر", "نُشرت في كتاب Enough Rope سنة 1926."], [7, "With what topic does the paragraph preceding the passage most likely deal?", "A. Dorothy Parker's early childhood", "B. American literature of the nineteenth century", "C. An introduction to literary criticism", "D. A well-known female author other than Dorothy Parker", 3, "The *next* famous woman", "القطعة تبدأ بـ 'الكاتبة المشهورة *التالية*'، مما يعني أن الفقرة السابقة كانت عن كاتبة أخرى."], [7, "According to the passage, fog is found when wetness in the air is", "A. Vaporized", "B. Cooled", "C. Dampened", "D. Heated", 1, "مبرد", "يتكون الضباب عندما يُبرد (is cooled) الهواء الرطب وتتكثف رطوبته."], [7, "According to the passage, advection fog is found", "A. In valleys", "B. In the ocean", "C. Near bodies of water", "D. Only in small, enclosed areas", 2, "المسطحات المائية", "يحدث على طول الساحل أو بالقرب من الأنهار والبحيرات (مسطحات مائية)."], [7, "In the passage, radiation fog is said to be", "A. Similar to advection fog", "B. Found in coastal areas", "C. Fast-moving", "D. Trapped moisture hanging over inland valleys", 3, "يُحتجز في الوديان", "يوصف بأنه رطوبة ثابتة تحوم فوق وديان الشتاء."], [7, "According to the passage, which of the following statements about fog is true?", "A. Advection fog is caused when cold winds blow across a heated land surface", "B. Advection fog is the type of fog that occurs in small valleys on clear nights", "C. Radiation fog occurs when the cooled atmosphere meets with heat from the earth", "D. Radiation fog generally moves quickly across vast areas of land", 2, "حرارة الأرض", "الضباب الإشعاعي يحدث عندما تهرب حرارة الأرض للغلاف الجوي البارد."], [7, "The author's purpose in this passage is to", "A. Explain the different types of fog", "B. Describe where different types of fog are found", "C. Discuss advection fog", "D. Give a scientific description of various types of precipitation", 0, "أنواع الضباب", "الكاتب يشرح الأنواع المختلفة للضباب (Advection و Radiation)."], [7, "Which of the following would be an appropriate title for this passage?", "A. George Washington's life in the White House", "B. The Burning of the White House", "C. The Early History of the White House", "D. Presidential Policies of Early U.S. Presidents", 2, "التاريخ المبكر", "القطعة تسرد تاريخ بناء البيت الأبيض والسنوات الأولى منه."], [7, "Why did George Washington NOT live in the White House?", "A. It had been burned by the British", "B. He did not like the architectural features", "C. He did not want to suffer the inconvenience that the Adamses had suffered", "D. Construction had not yet been complete", 3, "لم يكتمل البناء", "لم يُبنَ في الوقت المناسب ليعيش فيه (was not built in time)."], [7, "It can be inferred from the passage that John Adams was", "A. The first president of the United States", "B. The second president of the United States", "C. The third president of the United States", "D. The fourth president of the United States", 1, "الرئيس الثاني", "بما أن واشنطن الأول، وجيفرسون مذكور كالثالث، فآدامز هو الثاني."], [7, "According to the passage, which of the following best describes Thomas Jefferson's tenure in the White House?", "A. He had to flee the White House because of the war with the British", "B. He was accepting of the many inconveniences", "C. He removed the terraces that had been added by Adams", "D. He worked to improve the appearance and convenience of the White House", 3, "التحسينات", "عمل على تحسين راحة البيت الأبيض وإضافة ميزات معمارية."], [7, "According to the passage, when James Monroe came back to the White House, it had been", "A. Repressed", "B. Reconstructed", "C. Relocated", "D. Reserved", 1, "أعيد بناؤه", "عاد إلى سكن أعيد بناؤه (a rebuilt residence)."], [7, "The main purpose of this passage is to", "A. Describe a medical technique that is being used extensively today", "B. Describe a new, potentially helpful medical treatment", "C. Teach patients how to use biofeedback machine", "D. Explain how a patient uses biofeedback to control his heartbeat", 1, "علاج جديد واعد", "النص يصف أداة علاجية جديدة على وشك أن تصبح مهمة."], [7, "According to the passage, what is an autonomic body process?", "A. Self-controlling", "B. Usual", "C. Consciously regulated", "D. Disorganized", 0, "تنظيم ذاتي", "القطعة تفسرها بـ self-regulating أي ذاتية التحكم."], [7, "According to the passage, how does a patient know that he has achieved a desired result when using a biofeedback machine?", "A. The machine records the results", "B. He hears a sound", "C. The doctor gives him a reward", "D. The machine monitors the process", 1, "يسمع صوتاً", "يسمع نغمة ثابتة (a steady tone) تشير لنجاحه."], [7, "Which of the following medical problems would probably NOT be treated by biofeedback?", "A. A tension headache", "B. Fever", "C. Irregular heart rhythm", "D. A broken leg", 3, "كسر الساق", "الكسر مشكلة جسدية لا يمكن علاجها بالتحكم في العمليات الذاتية."], [7, "According to the passage, what do medical authorities see in the future for biofeedback?", "A. Numerous problems", "B. Decreased implementation", "C. Many different uses", "D. Rejection by the medical community", 2, "تطبيقات لا حصر لها", "يتوقع المجتمع الطبي تطبيقات لا حصر لها (myriad applications)."], [7, "According to the passage, what makes fractional distillation occur?", "A. Time", "B. Pressure", "C. Heat", "D. Water", 2, "الحرارة", "تحدث من خلال الغليان (boiling) والذي يحتاج لحرارة."], [7, "According to the passage, fractional distillation can occur only if", "A. One element is at a higher pressure than the other", "B. The elements of the solution have different boiling temperatures", "C. The solution is forced from a compartment at one temperature into another", "D. The solution to be distilled is completely pure", 1, "اختلاف درجة الغليان", "تعتمد على حقيقة أن العناصر تغلي عند درجات حرارة مختلفة."], [7, "Which of the following statements about boiling temperatures is true?", "A. All elements have the same boiling temperature", "B. Water boils at a lower temperature than alcohol", "C. Any solution containing water boils at 2112 degrees", "D. Water does not boil at as low a temperature as alcohol", 3, "الماء والكحول", "الماء يغلي عند حرارة أعلى (212) مقارنة بالكحول (172)."], [7, "According to the passage, in the flash distillation process, what causes the liquid to vaporize?", "A. The pressure on the liquid is suddenly changed", "B. The liquid changes compartments", "C. The addition of sea water to a solution causes a chemical change", "D. There is a rapid increase in the pressure on the liquid", 0, "تغير الضغط", "يتبخر السائل فجأة بسبب تغير الضغط من عالي لمنخفض."], [7, "Which of the following processes would probably involve distillation?", "A. Adding a new substance to a mixture", "B. Dividing a pure element into smaller quantities", "C. Mixing two elements together to form a new solution", "D. Removing impurities from a solution", 3, "إزالة الشوائب", "التقطير يستخدم لفصل العناصر، مثل إزالة الشوائب للحصول على نقاء."], [7, "The main purpose of this passage is to", "A. Explain how salt water can be turned into fresh water", "B. Give an example of fractional distillation", "C. Describe a scientific process", "D. Discuss the boiling temperatures of various liquids", 2, "وصف عملية علمية", "القطعة تصف العملية العلمية (التقطير) وأنواعها المختلفة."], [7, "What would be the most appropriate title for the passage?", "A. Where Desert Tundra is Found", "B. The Weather in the Arctic", "C. Why Cold Deserts Occur", "D. The Variety of Plant Life in Desert Tundra", 2, "لماذا تحدث؟", "النص يشرح لماذا الصحراء الباردة تكون بيئة مستحيلة للنباتات، أي لماذا تحدث كصحراء."], [7, "According to the passage, desert tundra is found", "A. Throughout North America, Europe, and Asia", "B. In Antarctica", "C. On the Arctic borders of the northern continents", "D. At the North Pole", 2, "حدود القطب الشمالي", "موجودة على أطراف القطب الشمالي لهذه القارات."], [7, "According to the passage, what makes plant life almost impossible in areas of desert tundra during most of the year?", "A. Excessive water on the plants", "B. The frozen state of the water", "C. The increase in temperature", "D. The lack of ice", 1, "الماء المتجمد", "وجود الجليد بدلاً من الماء السائل يعني عدم توفر رطوبة للنمو."], [7, "Which of the following happens when the weather heats up?", "A. Plants can flourish", "B. Vegetation lacks sufficient moisture", "C. The days become shorter", "D. There is too much water", 3, "كثرة المياه", "عندما يذوب الجليد، يتوفر حجم كبير جداً وفائض من المياه."], [7, "According to the passage, why can't the water drain after it melts?", "A. The land beneath the surface is still frozen", "B. The temperature is too high", "C. The period of time is too short", "D. The vegetation is flourishing", 0, "التربة التحتية متجمدة", "بسبب عدم وجود تصريف للمياه عبر التربة التحتية المتجمدة (frozen subsoil)."], [7, "The topic of this passage is", "A. How the state of California is divided into north and south", "B. The variations in California's coastal geography", "C. The breathtaking beauty of California", "D. The exceptions in coastal geography", 1, "تنوع الجغرافيا الساحلية", "النص يتحدث عن تنوع طبيعة السواحل وتوزع الموانئ في كاليفورنيا."], [7, "According to the passage, what measures 840 miles in length?", "A. The California coastline", "B. The Coast Ranges", "C. The rugged cliffs", "D. The exceptional part of northern California", 0, "الساحل", "يبلغ طول الساحل الكاليفورني 840 ميلاً."], [7, "The coast ranges are", "A. Flat, sandy areas on the coast of California", "B. Found in southern California", "C. A series of mountains", "D. Hundreds of miles north of the cliff", 2, "سلسلة جبال", "بما أنها ذات منحدرات وعرة (rugged cliffs) وتمتد في الشمال، فهي سلاسل جبلية."], [7, "It is implied in the passage that northern California", "A. has more beaches than southern California", "B. is roughly the same as southern California", "C. has fewer major harbors than southern California", "D. has a substantially different coastline from southern California", 3, "ساحل مختلف", "النص يوضح اختلاف الساحل الشمالي (جبال) عن الساحل الجنوبي (شواطئ رملية)."], [7, "According to the passage, where are the major harbors located in California?", "A. In San Diego", "B. Only in northern California", "C. Near Humboldt and Monterey", "D. In the north and in the south", 3, "في الشمال والجنوب", "يوجد ميناء رئيسي في سان فرانسيسكو (شمال) وآخر في سان دييغو (جنوب)."]];
+        const passages = {"Reading 3 - Passage 1": "Algae is a primitive form of life, a single-celled or simple multiple-celled organism that is able to conduct the process of photosynthesis...", "Reading 3 - Passage 2": "Medical bills in the United States have risen outrageously since the beginning of the 1960's, and steps need to be taken to reverse this trend...", "Reading 3 - Passage 3": "The invention of phonograph happened quite by accident. Thomas Edison moved to Menlo Park, New Jersey, in 1876...", "Reading 3 - Passage 4": "The Indian cliff dwellings of the southwestern United States are a source of interest and mystery for archeologists...", "Reading 3 - Passage 5": "The U.S. Guaranteed student Loan authority provides federally subsidized 9 per cent loans directly from banks to students...", "Reading 3 - Passage 6": "A binary star is actually a pair of stars that are held together by the force of gravity...", "Reading 3 - Passage 7": "In west-central New York State there is a group of eleven long, narrow lakes known as the Finger Lakes...", "Reading 4 - Passage 1": "In the American colonies there was little money. England did not supply the colonies with coins...", "Reading 4 - Passage 2": "The brain of the average human weighs approximately 14 kilograms and consists of three main parts: the cerebrum, the cerebellum, and the brain stem...", "Reading 4 - Passage 3": "The next famous woman writer to be considered is Dorothy Parker, an American poet, short story writer, and literary critic...", "Reading 4 - Passage 4": "Fog occurs when damp air above the surface of the earth is cooled to the point at which it condenses...", "Reading 4 - Passage 5": "The White House, the official home of the United States president, was not built in time for George Washington to live in it...", "Reading 4 - Passage 6": "Biofeedback is on the verge of becoming an important tool in medical therapy. Using biofeedback, a patient can learn to control certain body systems...", "Reading 4 - Passage 7": "Distillation, the process of separating the elements of a solution, is widely used in industry today...", "Reading 4 - Passage 8": "Desert tundra, or cold desert, occurs on the Arctic edges of North America, Europe, and Asia...", "Reading 4 - Passage 9": "Geographically, California's diversity is breathtaking, and the state's coastline from north to south is no exception..."};
+        
+        const sectionNames = { 6: "Reading Comprehension 3", 7: "Reading Comprehension 4" };
+        
+        let currentIdx = 0;
+        let userAnswers = new Array(rawData.length).fill(null);
+        let sectionScores = { 6: {c:0, t:0}, 7: {c:0, t:0} };
+
+        function startQuiz() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('hidden');
+            document.getElementById('quizScreen').classList.add('flex');
+            loadQuestion(0);
+        }
+
+        function loadQuestion(idx) {
+            currentIdx = idx;
+            const q = rawData[idx];
+            
+            document.getElementById('qCurrent').textContent = idx + 1;
+            document.getElementById('progressBar').style.width = `${((idx + 1) / rawData.length) * 100}%`;
+            document.getElementById('sectionBadge').textContent = sectionNames[q[0]];
+            
+            // Logic to determine Passage Key based on index
+            let passKey = "";
+            if (idx < 50) {
+                // Reading 3
+                if (idx < 8) passKey = "Reading 3 - Passage 1";
+                else if (idx < 15) passKey = "Reading 3 - Passage 2";
+                else if (idx < 21) passKey = "Reading 3 - Passage 3";
+                else if (idx < 29) passKey = "Reading 3 - Passage 4";
+                else if (idx < 39) passKey = "Reading 3 - Passage 5";
+                else if (idx < 45) passKey = "Reading 3 - Passage 6";
+                else passKey = "Reading 3 - Passage 7";
+            } else {
+                // Reading 4
+                if (idx < 57) passKey = "Reading 4 - Passage 1";
+                else if (idx < 64) passKey = "Reading 4 - Passage 2";
+                else if (idx < 69) passKey = "Reading 4 - Passage 3";
+                else if (idx < 74) passKey = "Reading 4 - Passage 4";
+                else if (idx < 79) passKey = "Reading 4 - Passage 5";
+                else if (idx < 84) passKey = "Reading 4 - Passage 6";
+                else if (idx < 90) passKey = "Reading 4 - Passage 7";
+                else if (idx < 95) passKey = "Reading 4 - Passage 8";
+                else passKey = "Reading 4 - Passage 9";
+            }
+            
+            document.getElementById('passageText').textContent = passages[passKey];
+
+            document.getElementById('questionText').innerHTML = q[1];
+            
+            const optsContainer = document.getElementById('optionsContainer');
+            optsContainer.innerHTML = '';
+            
+            const options = [q[2], q[3], q[4], q[5]];
+            options.forEach((optText, i) => {
+                const btn = document.createElement('button');
+                btn.className = `opt-btn w-full text-left dir-ltr p-4 rounded-xl border-2 border-slate-200 bg-white font-medium text-slate-700 shadow-sm block`;
+                btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-slate-100 text-slate-600 text-center leading-8 mr-3 font-bold pointer-events-none">${String.fromCharCode(65+i)}</span> ${optText.substring(3)}`;
+                btn.onclick = () => handleAnswer(i);
+                
+                if (userAnswers[idx] !== null) {
+                    btn.disabled = true;
+                    if (i === q[6]) {
+                        btn.classList.add('correct', 'border-green-500', 'bg-green-50');
+                        btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-green-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none"><i class="fa-solid fa-check"></i></span> ${optText.substring(3)}`;
+                    } else if (i === userAnswers[idx]) {
+                        btn.classList.add('wrong', 'border-red-400', 'bg-red-50');
+                        btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-red-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none"><i class="fa-solid fa-xmark"></i></span> ${optText.substring(3)}`;
+                    }
+                }
+                optsContainer.appendChild(btn);
+            });
+
+            document.getElementById('hintBox').classList.add('hidden');
+            document.getElementById('hintText').textContent = q[7];
+            document.getElementById('hintBtn').style.display = (userAnswers[idx] === null && q[7]) ? 'flex' : 'none';
+
+            const expBox = document.getElementById('explanationBox');
+            if (userAnswers[idx] !== null) {
+                showExplanation(userAnswers[idx] === q[6]);
+            } else {
+                expBox.classList.add('hidden');
+            }
+
+            document.getElementById('prevBtn').disabled = (idx === 0);
+            
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+            
+            if (idx === rawData.length - 1) {
+                nextBtn.classList.add('hidden');
+                if (userAnswers[idx] !== null) finishBtn.classList.remove('hidden');
+                else finishBtn.classList.add('hidden');
+            } else {
+                finishBtn.classList.add('hidden');
+                if (userAnswers[idx] !== null) nextBtn.classList.remove('hidden');
+                else nextBtn.classList.add('hidden');
+            }
+        }
+
+        function toggleHint() {
+            document.getElementById('hintBox').classList.toggle('hidden');
+        }
+
+        function handleAnswer(selectedIndex) {
+            const q = rawData[currentIdx];
+            userAnswers[currentIdx] = selectedIndex;
+            const isCorrect = (selectedIndex === q[6]);
+            
+            if (isCorrect) sectionScores[q[0]].c++;
+
+            const buttons = document.getElementById('optionsContainer').children;
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].disabled = true;
+                if (i === q[6]) {
+                    buttons[i].classList.add('correct');
+                    buttons[i].querySelector('span').innerHTML = '<i class="fa-solid fa-check"></i>';
+                    buttons[i].querySelector('span').className = "inline-block w-8 h-8 rounded bg-green-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none";
+                } else if (i === selectedIndex) {
+                    buttons[i].classList.add('wrong');
+                    buttons[i].querySelector('span').innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    buttons[i].querySelector('span').className = "inline-block w-8 h-8 rounded bg-red-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none";
+                }
+            }
+
+            document.getElementById('hintBtn').style.display = 'none';
+            document.getElementById('hintBox').classList.add('hidden');
+            showExplanation(isCorrect);
+            
+            if (currentIdx === rawData.length - 1) document.getElementById('finishBtn').classList.remove('hidden');
+            else document.getElementById('nextBtn').classList.remove('hidden');
+        }
+
+        function showExplanation(isCorrect) {
+            const expBox = document.getElementById('explanationBox');
+            const expTitle = document.getElementById('expTitle');
+            const expIcon = document.getElementById('expIcon');
+            const q = rawData[currentIdx];
+
+            expBox.classList.remove('hidden', 'exp-success', 'exp-error');
+            
+            if (isCorrect) {
+                expBox.classList.add('exp-success');
+                expTitle.textContent = "إجابة صحيحة!";
+                expTitle.className = "font-bold text-lg text-green-700";
+                expIcon.className = "fa-solid fa-circle-check text-green-600 ml-2 text-xl";
+            } else {
+                expBox.classList.add('exp-error');
+                expTitle.textContent = "إجابة خاطئة!";
+                expTitle.className = "font-bold text-lg text-red-700";
+                expIcon.className = "fa-solid fa-circle-xmark text-red-600 ml-2 text-xl";
+            }
+            
+            document.getElementById('explanationText').innerHTML = q[8];
+        }
+
+        function changeQuestion(step) {
+            if (currentIdx + step >= 0 && currentIdx + step < rawData.length) {
+                loadQuestion(currentIdx + step);
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizScreen').classList.remove('flex');
+            document.getElementById('quizScreen').classList.add('hidden');
+            
+            const resScreen = document.getElementById('resultScreen');
+            resScreen.classList.remove('hidden');
+            resScreen.classList.add('flex');
+
+            let totalCorrect = 0;
+            for(let key in sectionScores) totalCorrect += sectionScores[key].c;
+            
+            document.getElementById('finalScore').textContent = totalCorrect;
+
+            let percentage = (totalCorrect / rawData.length) * 100;
+            const icon = document.getElementById('resultIcon');
+            const msg = document.getElementById('resultMsg');
+            
+            if(percentage >= 80) {
+                icon.className = "w-24 h-24 rounded-full flex items-center justify-center mb-6 text-5xl shadow-lg bg-green-100 text-green-600";
+                icon.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+                msg.textContent = "ممتاز! أداء رائع يا بطل 🚀";
+                msg.className = "text-2xl font-bold mb-2 text-green-700";
+            } else {
+                icon.className = "w-24 h-24 rounded-full flex items-center justify-center mb-6 text-5xl shadow-lg bg-amber-100 text-amber-600";
+                icon.innerHTML = '<i class="fa-solid fa-thumbs-up"></i>';
+                msg.textContent = "جيد جداً، استمر! 👍";
+                msg.className = "text-2xl font-bold mb-2 text-amber-700";
+            }
+        }
+    </script>
+</body>
+</html>

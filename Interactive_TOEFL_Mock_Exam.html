@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>امتحان التوفل التجريبي التفاعلي</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f0f4f8; color: #1e293b; overflow-x: hidden; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .opt-btn { transition: all 0.3s ease; }
+        .opt-btn:hover:not(:disabled) { border-color: #3b82f6; background-color: #eff6ff; transform: translateY(-2px); }
+        .opt-btn.correct { background-color: #dcfce7; border-color: #22c55e; color: #166534; font-weight: bold; }
+        .opt-btn.wrong { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .opt-btn:disabled { cursor: default; }
+        
+        .progress-bar-fill { transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom scrollbar for passages */
+        .passage-scroll::-webkit-scrollbar { width: 6px; }
+        .passage-scroll::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .passage-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .passage-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center py-6 px-4">
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="glass-panel w-full max-w-2xl p-8 rounded-3xl text-center fade-in">
+        <div class="w-24 h-24 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fa-solid fa-graduation-cap text-4xl"></i>
+        </div>
+        <h1 class="text-3xl font-extrabold mb-4 text-slate-800">امتحان التوفل التجريبي التفاعلي</h1>
+        <p class="text-slate-500 mb-8 leading-relaxed">
+            تم تصميم هذا الامتحان ليحاكي الامتحان التجريبي لنموذج (Book 2).<br>
+            <span class="text-rose-500 font-bold text-sm bg-rose-50 px-2 py-1 rounded mt-2 inline-block">
+                ملاحظة: بعض إجابات الكتاب الأصلي خاطئة علمياً، وتمت برمجتها هنا لتطابق الكتاب للحصول على الدرجة مع توضيح الصواب!
+            </span>
+        </p>
+        
+        <div class="grid grid-cols-2 gap-4 mb-8 text-right text-sm text-slate-600">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <i class="fa-solid fa-book-open text-indigo-500 ml-2"></i> إجمالي الأسئلة: <span class="font-bold text-slate-800" id="totalQCount">0</span>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <i class="fa-solid fa-clock text-indigo-500 ml-2"></i> لا يوجد وقت محدد
+            </div>
+        </div>
+        
+        <button onclick="startQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-95 text-lg">
+            ابدأ الامتحان الآن <i class="fa-solid fa-rocket mr-2"></i>
+        </button>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quizScreen" class="glass-panel w-full max-w-2xl rounded-3xl overflow-hidden hidden flex-col relative h-[85vh] sm:h-auto sm:min-h-[600px]">
+        <!-- Header -->
+        <div class="bg-white px-6 py-4 border-b border-slate-100 flex justify-between items-center z-10 shadow-sm relative">
+            <div class="font-bold text-slate-700">سؤال <span id="qCurrent">1</span> <span class="text-slate-400 text-sm font-normal">من <span id="qTotal">100</span></span></div>
+            <div id="sectionBadge" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold tracking-wide">
+                Vocabulary
+            </div>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-100 h-1.5">
+            <div id="progressBar" class="bg-blue-500 h-1.5 progress-bar-fill w-0"></div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-6 bg-slate-50 relative pb-24">
+            
+            <!-- Passage (if reading) -->
+            <div id="passageContainer" class="hidden mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 passage-scroll max-h-48 overflow-y-auto shadow-inner">
+                <h3 class="text-amber-800 font-bold mb-2 flex items-center"><i class="fa-solid fa-file-lines ml-2"></i> Reading Passage</h3>
+                <p id="passageText" class="text-amber-900/80 text-sm leading-relaxed text-left dir-ltr font-serif"></p>
+            </div>
+
+            <!-- Question -->
+            <div class="mb-8">
+                <h2 id="questionText" class="text-xl font-bold text-slate-800 text-left dir-ltr leading-relaxed">Loading...</h2>
+            </div>
+
+            <!-- Hint Button & Box -->
+            <div class="mb-6 flex justify-end">
+                <button onclick="toggleHint()" id="hintBtn" class="text-amber-500 bg-amber-50 hover:bg-amber-100 px-4 py-2 rounded-xl text-sm font-bold transition-colors flex items-center border border-amber-200">
+                    تلميح <i class="fa-regular fa-lightbulb mr-2"></i>
+                </button>
+            </div>
+            <div id="hintBox" class="hidden mb-6 bg-amber-100 text-amber-800 p-4 rounded-xl text-sm border border-amber-200 slide-up">
+                <i class="fa-solid fa-circle-info ml-1"></i> <span id="hintText"></span>
+            </div>
+
+            <!-- Options -->
+            <div id="optionsContainer" class="space-y-3">
+                <!-- Buttons injected via JS -->
+            </div>
+
+            <!-- Explanation -->
+            <div id="explanationBox" class="hidden mt-6 p-5 rounded-2xl slide-up shadow-sm border">
+                <div class="flex items-center mb-2">
+                    <i id="expIcon" class="text-xl ml-2"></i>
+                    <h3 id="expTitle" class="font-bold text-lg"></h3>
+                </div>
+                <p id="explanationText" class="text-sm leading-relaxed"></p>
+            </div>
+        </div>
+
+        <!-- Footer Controls -->
+        <div class="bg-white p-4 border-t border-slate-100 flex justify-between items-center absolute bottom-0 w-full shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.05)]">
+            <button id="prevBtn" onclick="changeQuestion(-1)" class="px-5 py-2.5 rounded-xl text-slate-500 font-bold hover:bg-slate-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                <i class="fa-solid fa-arrow-right ml-1"></i> السابق
+            </button>
+            
+            <button id="nextBtn" onclick="changeQuestion(1)" class="px-5 py-2.5 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700 transition-colors shadow-md disabled:opacity-30 disabled:cursor-not-allowed hidden">
+                التالي <i class="fa-solid fa-arrow-left mr-1"></i>
+            </button>
+            
+            <button id="finishBtn" onclick="showResults()" class="px-5 py-2.5 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-colors shadow-md hidden">
+                إنهاء النتيجة <i class="fa-solid fa-check-double mr-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="resultScreen" class="glass-panel w-full max-w-2xl p-8 rounded-3xl hidden flex-col items-center">
+        <div id="resultIcon" class="w-24 h-24 rounded-full flex items-center justify-center mb-6 text-4xl shadow-lg"></div>
+        <h2 id="resultMsg" class="text-2xl font-bold mb-2"></h2>
+        
+        <div class="relative w-40 h-40 mb-6 flex items-center justify-center rounded-full border-8 border-slate-100">
+            <div class="absolute inset-0 border-8 border-blue-500 rounded-full border-l-transparent border-b-transparent transform rotate-45"></div>
+            <div class="text-center">
+                <div class="text-4xl font-black text-slate-800" id="finalScore">0</div>
+                <div class="text-slate-500 text-sm">من <span id="finalTotal">0</span></div>
+            </div>
+        </div>
+
+        <div class="w-full bg-slate-50 p-6 rounded-2xl border border-slate-100 mb-8">
+            <h3 class="font-bold text-slate-700 mb-4 border-b pb-2">تحليل الأداء</h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold">المفردات (Vocab)</span>
+                    <span id="scoreVocab" class="px-3 py-1 rounded-lg text-sm font-bold bg-blue-100 text-blue-700">0/0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold">القواعد (Structure)</span>
+                    <span id="scoreStruct" class="px-3 py-1 rounded-lg text-sm font-bold bg-purple-100 text-purple-700">0/0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold">القراءة (Reading)</span>
+                    <span id="scoreRead" class="px-3 py-1 rounded-lg text-sm font-bold bg-amber-100 text-amber-700">0/0</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="feedbackText" class="text-slate-600 text-sm leading-relaxed mb-8 text-center bg-blue-50 p-4 rounded-xl border border-blue-100"></div>
+
+        <button onclick="location.reload()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-lg">
+            إعادة الامتحان <i class="fa-solid fa-rotate-right mr-2"></i>
+        </button>
+    </div>
+
+    <!-- Application Data & Logic -->
+    <script>
+        const rawData = [[4, 1, "What is the closest meaning of “departure” in the sentence “What time’s your departure?”", "A. Arrival", "B. Leaving", "C. Destination", "D. Journey", 1, "فكر في معنى المغادرة.", "الإجابة الصحيحة Leaving لأنها تعني المغادرة."], [5, 1, "The word “smaller” in “The room could’ve been smaller” is closest in meaning to:", "A. Less spacious", "B. More expensive", "C. Less comfortable", "D. More crowded", 0, "عكس كلمة واسع.", "أصغر تعني أقل اتساعاً (Less spacious)."], [6, 1, "Which word could replace “recommended” in the sentence “The teacher recommended reading one chapter per week” without changing its meaning?", "A. Required", "B. Suggested", "C. Prevented", "D. Avoided", 1, "الكلمة تعني اقترح أو نصح.", "اقترح (Suggested) هي الأقرب لمعنى أوصى."], [7, 1, "What does “open” mean in the sentence “The library was open for ten hours”?", "A. Available for use", "B. Newly established", "C. Unoccupied", "D. Unlocked permanently", 0, "متاحة للطلاب.", "مفتوحة تعني أنها متاحة للاستخدام (Available for use)."], [8, 1, "Which of the following is opposite in meaning to “forced” in the sentence “Sally was forced to finish the assignment”?", "A. Compelled", "B. Required", "C. Prevented", "D. Allowed", 3, "المطلوب هو العكس (المضاد).", "عكس أُجبرت هو سُمح لها (Allowed)."], [9, 1, "The word “elective” in the sentence “A student chooses three elective courses” could best be replaced by:", "A. Compulsory", "B. Optional", "C. Difficult", "D. Advanced", 1, "مادة تختارها بمزاجك.", "مادة اختيارية تعني Optional."], [10, 1, "What is the closest meaning of “migration” in the sentence “Martha discussed whale migration”?", "A. Movement from one region to another", "B. Reproduction of whales", "C. Protection of whales", "D. Communication between whales", 0, "انتقال جماعي.", "الهجرة هي الانتقال من منطقة لأخرى (Movement)."], [11, 1, "Which word is opposite in meaning to “complaints” in the sentence “The dean listens to any complaints”?", "A. Objections", "B. Criticism", "C. Praise", "D. Concerns", 2, "المطلوب عكس كلمة شكاوى.", "عكس الشكوى والانتقاد هو المدح (Praise)."], [12, 1, "The word “hard” in “Both Amy and Mark studied hard” could best be replaced by:", "A. Quickly", "B. Diligently", "C. Occasionally", "D. Independently", 1, "درسوا بجد واجتهاد.", "Diligently تعني باجتهاد واهتمام بالغ."], [13, 1, "What does “definitely” mean in the sentence “This month they are definitely starting the building”?", "A. Possibly", "B. Probably", "C. Certainly", "D. Eventually", 2, "بالتأكيد.", "تعني بالتأكيد وبلا شك (Certainly)."], [14, 1, "The word “barely” in the sentence “She barely avoided the truck” is closest in meaning to:", "A. Without difficulty", "B. By a very small margin", "C. Without noticing it", "D. In an unexpected manner", 1, "بالكاد / بصعوبة بالغة.", "تعني بهامش بسيط جداً أو بالكاد (By a very small margin)."], [15, 1, "What is the closest meaning of “delirious” in the sentence “Aren’t you delirious about lunch?”", "A. Extremely excited", "B. Extremely tired", "C. Very disappointed", "D. Completely confused", 0, "متحمس جداً.", "في هذا السياق تعني سعيد ومتحمس جداً (Extremely excited)."], [16, 1, "Which word could best replace “indicate” in the sentence “He should indicate who has finished the work”?", "A. Hide", "B. Show", "C. Prevent", "D. Forget", 1, "يوضح أو يبين.", "تعني يوضح أو يظهر (Show)."], [17, 1, "What does “unusually” mean in the sentence “It rained unusually hard this year”?", "A. In a normal way", "B. In a strange or uncommon way", "C. Regularly", "D. Occasionally", 1, "بشكل غير معتاد.", "بشكل غير مألوف أو نادر (In a strange or uncommon way)."], [18, 1, "Which of the following is closest in meaning to “broke” in the sentence “The news story about the lawyer broke quickly”?", "A. Ended", "B. Became public", "C. Was damaged", "D. Was rejected", 1, "انتشرت الأخبار.", "انتشرت وأصبحت علنية (Became public)."], [19, 1, "Which word could best replace “stunned” in the sentence “Suzanne was stunned when she saw the dress”?", "A. Amazed", "B. Bored", "C. Confused", "D. Annoyed", 0, "مندهشة بشدة.", "مندهشة ومبهورة (Amazed)."], [20, 1, "What is the closest meaning of “additional” in the sentence “It’ll cost more to include an additional stop”?", "A. Necessary", "B. Extra", "C. Final", "D. Previous", 1, "شيء زيادة.", "إضافي تعني (Extra)."], [21, 1, "Which of the following is opposite in meaning to “frightened” in the sentence “The child ran into the room because she was frightened”?", "A. Terrified", "B. Worried", "C. Calm", "D. Nervous", 2, "المطلوب عكس كلمة خائف.", "عكس خائف أو مذعور هو هادئ ومطمئن (Calm)."], [22, 1, "What does “selection” mean in the sentence “There’s a wide selection of shoes to choose from at the shopping center”?", "A. A single option", "B. A variety of choices", "C. An expensive product", "D. A specific brand", 1, "تشكيلة متنوعة.", "تشكيلة أو خيارات متنوعة (A variety of choices)."], [23, 1, "What does “reserved” mean in the sentence “He’s reserved in answering the question”?", "A. Unwilling to express his thoughts openly", "B. Extremely confident", "C. Eager to answer", "D. Unable to understand the question", 0, "متحفظ في كلامه.", "متحفظ وغير راغب في التعبير بانفتاح (Unwilling to express his thoughts openly)."], [24, 1, "Which word could best replace “conduct” in the sentence “Conduct the session”?", "A. Attend", "B. Cancel", "C. Lead", "D. Leave", 2, "يدير أو يقود.", "يقود أو يدير الجلسة (Lead)."], [25, 1, "Which word could best replace “cautious” in the sentence “I'll be cautious with the money”?", "A. Careful", "B. Generous", "C. Careless", "D. Confident", 0, "حذر ومنتبه.", "حريص وحذر (Careful)."], [26, 1, "What does “housing” mean in the sentence “It's not too difficult to find housing near campus”?", "A. Employment", "B. Accommodation", "C. Transportation", "D. Education", 1, "سكن.", "مكان للإقامة والسكن (Accommodation)."], [27, 1, "Which of the following is closest in meaning to “ongoing” in the sentence “Was the seminar ongoing?”?", "A. Cancelled", "B. Continuing", "C. Finished", "D. Delayed", 1, "مستمر.", "لا يزال مستمراً (Continuing)."], [28, 1, "What is the closest meaning of “lawn” in the sentence “Your lawn should be watered tonight”?", "A. A paved area beside a house", "B. An area of grass", "C. A vegetable garden", "D. A public playground", 1, "النجيلة / العشب.", "مساحة من العشب الأخضر (An area of grass)."], [29, 1, "Which word could best replace “stroll” in the sentence “Would you like to go for a stroll by the ocean?”?", "A. Walk", "B. Run", "C. Drive", "D. Swim", 0, "يتمشى.", "نزهة سيراً على الأقدام (Walk)."], [30, 1, "Which of the following is opposite in meaning to “accomplish” in the sentence “I didn't accomplish much because of the weather”?", "A. Achieve", "B. Complete", "C. Fail", "D. Attain", 2, "المطلوب عكس كلمة ينجز.", "عكس ينجز أو يحقق هو يفشل (Fail)."], [31, 1, "What does “selected” mean in the sentence “The students selected him to be council president”?", "A. Rejected", "B. Chose", "C. Questioned", "D. Supported financially", 1, "اختاروا.", "اختار (Chose)."], [32, 1, "Which word could best replace “essential” in the sentence “Car insurance is essential”?", "A. Unnecessary", "B. Optional", "C. Necessary", "D. Convenient", 2, "ضروري.", "أساسي وضروري (Necessary)."], [33, 1, "Which of the following is opposite in meaning to “younger” in the sentence “Adam's younger than his brother and sister”?", "A. Smaller", "B. Older", "C. Shorter", "D. Weaker", 1, "المطلوب عكس أصغر.", "عكس أصغر سناً هو أكبر سناً (Older)."], [34, 1, "The word “crowd” in the sentence “This is the second largest football crowd ever” is closest in meaning to:", "A. Stadium", "B. Group of spectators", "C. Football team", "D. Competition", 1, "جمهور / حشد.", "مجموعة من المتفرجين (Group of spectators)."], [35, 1, "What does “upset” mean in the sentence “Steve's economics grade upset him”?", "A. Made him happy", "B. Made him angry or unhappy", "C. Surprised him positively", "D. Made him confused academically", 1, "أزعجه.", "جعله غاضباً أو حزيناً (Made him angry or unhappy)."], [36, 1, "The phrase “get on with your life” in “Hopefully you can get on with your life” is closest in meaning to:", "A. Continue living normally after a difficult experience", "B. Change your place of residence", "C. Become more successful immediately", "D. Avoid other people", 0, "تتجاوز المحنة وتكمل حياتك.", "الاستمرار في العيش بشكل طبيعي بعد تجربة صعبة."], [37, 1, "Which phrase could best replace “decide on” in the sentence “He needs help to decide on a paper topic”?", "A. Choose", "B. Reject", "C. Explain", "D. Research", 0, "يستقر على أو يختار.", "يختار (Choose)."], [38, 1, "What does “at the beginning” mean in the sentence “The assignment was given at the beginning of the semester”?", "A. At the end", "B. At the start", "C. In the middle", "D. After completion", 1, "في البداية.", "في البدء (At the start)."], [39, 1, "Which word could best replace “history” in the phrase “American History”?", "A. The study of past events", "B. The study of future developments", "C. The study of geography", "D. The study of economics", 0, "دراسة الماضي.", "دراسة الأحداث الماضية (The study of past events)."], [40, 1, "What does “general” mean in the sentence “The topic is too general”?", "A. Too specific", "B. Too broad", "C. Too recent", "D. Too complicated", 1, "عام وواسع جداً.", "واسع النطاق وغير محدد (Too broad)."], [41, 1, "What does “interference” mean in the sentence “There was interference from competing radio stations”?", "A. Assistance", "B. Disruption", "C. Cooperation", "D. Competition", 1, "تشويش أو تداخل.", "اضطراب أو تشويش (Disruption)."], [42, 1, "What is the closest meaning of “regulated” in the sentence “The radio stations were highly regulated”?", "A. Carefully controlled by rules", "B. Completely ignored", "C. Privately owned", "D. Frequently advertised", 0, "منظم بقوانين.", "مراقب ومنظم بقواعد (Carefully controlled by rules)."], [43, 1, "In the expression “Federal Communications Commission,” the word “commission” most nearly means:", "A. A government agency or official group", "B. A private company", "C. A communication system", "D. A legal document", 0, "هيئة أو لجنة رسمية.", "وكالة حكومية أو مجموعة رسمية (A government agency)."], [44, 1, "Which word could best replace “several” in the phrase “several people visited the museum”?", "A. One", "B. Two or three", "C. More than one but not many", "D. Thousands", 2, "بضعة أشخاص.", "أكثر من واحد ولكن ليس كثيراً (More than one but not many)."], [45, 1, "Which word could best replace “various” in the phrase “various other museums”?", "A. Different", "B. Identical", "C. Particular", "D. Limited", 0, "متنوعة أو مختلفة.", "مختلفة أو متنوعة (Different)."], [46, 1, "What does “predicted” mean in the sentence “He thinks the weather won’t be as bad as predicted”?", "A. Expected in advance", "B. Experienced previously", "C. Reported inaccurately", "D. Observed directly", 0, "متوقع.", "مُتوقع مسبقاً (Expected in advance)."], [47, 1, "Which word could best replace “laundry” in the sentence “He should look for a way to do his own laundry”?", "A. Cleaning clothes", "B. Buying clothes", "C. Repairing clothes", "D. Storing clothes", 0, "غسيل الملابس.", "تنظيف الملابس. ملاحظة هامة: هذه هي الإجابة الصحيحة علمياً، إذا حسبها النظام الإلكتروني خاطئة فهذا عيب في برمجة النموذج الخاص بهم."], [48, 1, "What does “seriously injured” mean in the sentence “She knows he’s not seriously injured”?", "A. Suffering a minor physical injury", "B. Completely unconscious", "C. Suffering a severe physical injury", "D. Recovering from an illness", 2, "مصاب إصابة بالغة.", "يعاني من إصابة جسدية شديدة (Suffering a severe physical injury)."], [49, 1, "Which word could best replace “far away” in the sentence “His home is far away”?", "A. Nearby", "B. Distant", "C. Accessible", "D. Convenient", 1, "بعيد.", "بعيد المسافة (Distant)."], [50, 1, "What is the closest meaning of “unaware” in the sentence “She was unaware of the tornado”?", "A. Not conscious of", "B. Afraid of", "C. Prepared for", "D. Concerned about", 0, "غير مدرك أو غافل عن.", "غير مدرك لـ (Not conscious of)."], [51, 1, "What does “comprehends” mean in the sentence “He comprehends that he must prepare for his exam”?", "A. Understands", "B. Forgets", "C. Avoids", "D. Questions", 0, "يستوعب ويفهم.", "يفهم ويستوعب (Understands)."], [52, 1, "What does “immediately” mean in the sentence “He needs to talk to her immediately”?", "A. Eventually", "B. At once", "C. Tomorrow", "D. Occasionally", 1, "حالاً وفوراً.", "في الحال (At once)."], [53, 1, "Which word could best replace “annually” in the sentence “It’s better to publish the report annually”?", "A. Every month", "B. Every six months", "C. Every year", "D. Every week", 2, "بشكل سنوي.", "كل سنة (Every year)."], [54, 2, "Overexposure to the sun causes ______ health problems.", "A. various", "B. among", "C. but", "D. of", 0, "نحتاج إلى صفة.", "نحتاج إلى صفة (Adjective) لوصف المشاكل الصحية (health problems). الكلمة الوحيدة التي تمثل صفة هنا هي various."], [55, 2, "Birds head south to warmer climates when ______.", "A. is cold weather", "B. does cold weather come", "C. cold weather comes", "D. comes cold weather", 2, "الرابط when يتبعه جملة عادية.", "الرابط (when) يحتاج بعده إلى جملة كاملة بترتيب طبيعي (فاعل ثم فعل)."], [56, 2, "The city council is empowered not only to enact new laws, ______ select a new mayor between elections should the need arise.", "A. and to", "B. but also to", "C. and", "D. so that", 1, "قاعدة not only...", "قاعدة الروابط المزدوجة: (not only... but also)."], [57, 2, "Drying of meats and vegetables is no longer considered one of ______ of preserving food.", "A. the ways are useful", "B. the ways most useful", "C. the most useful ways", "D. most are useful way", 2, "تفضيل مع اسم جمع.", "التعبير (one of) يجب أن يتبعه اسم جمع وصفة تفضيل صحيحة الترتيب."], [58, 2, "A giant kind of grass, bamboo may reach a height of 120 feet and ______.", "A. a diameter of one foot", "B. its diameter is one foot", "C. there is a diameter of one foot", "D. which is a diameter of one foot", 0, "قاعدة التوازي.", "قاعدة التوازي (Parallelism) مع (a height of)."], [59, 2, "A thermometer is an instrument that ______ temperature.", "A. the heat", "B. having", "C. does not", "D. measures", 3, "نحتاج فعل.", "ضمير الوصل (that) يحتاج بعده إلى فعل مفرد في المضارع البسيط (measures)."], [60, 2, "Aspirin is used ______ a constriction of the blood vessels.", "A. the counteracting", "B. to counteract", "C. counteract", "D. counteracting", 1, "للتعبير عن الغرض.", "للتعبير عن الغرض نستخدم (to + الفعل في المصدر)."], [61, 2, "Composing more than forty percent of the diet, fats are ______ by the body for energy.", "A. using specifically", "B. used specifically", "C. specific use", "D. the use specific", 1, "مبني للمجهول.", "الجملة مبنية للمجهول (are used) ويأتي بعدها ظرف."], [62, 2, "The sea mammal medusa is popularly called a jellyfish because ______ jelly.", "A. looks rather like", "B. looks like a rather", "C. which looks rather like", "D. which looks like rather", 0, "في الكتاب الأصلي خطأ مطبعي it looks.", "الجملة تحتاج لضمير وفعل. الخيار الأصلي كان if looks rather like بخطأ مطبعي. الأصح (looks rather like) بفرض وجود it في السؤال أو الخيار."], [63, 2, "The electric eel uses its electric shock to capture food and ______.", "A. for protection", "B. protect itself", "C. protecting itself", "D. it protects itself", 1, "قاعدة التوازي.", "قاعدة التوازي (Parallelism) مع (to capture) نحتاج فعل في المصدر (protect)."], [64, 2, "______ anti-trust laws did not exist in the U.S., there would not be as much competition in certain industries.", "A. So", "B. If", "C. For", "D. Also", 1, "حالة شرطية.", "الجملة تمثل الحالة الشرطية، لذا نحتاج إلى أداة الشرط (If)."], [65, 2, "In 1885 photography changed dramatically ______ introduced paper-based film.", "A. Eastman", "B. when was", "C. when it was", "D. when Eastman", 3, "نحتاج رابط وفاعل.", "الجملة تتطلب رابطاً زمنياً متبوعاً بفاعل وفعل."], [66, 2, "A bat will often spend the daylight hours ______ upside down in a tree or cave.", "A. hanging", "B. which hangs", "C. that is", "D. hangs", 0, "الفعل spend يأخذ ing.", "الفعل (spend time) يتبعه دائماً الفعل مضافاً له (ing)."], [67, 2, "Geomorphology is the study of the changes that ______ on the surface of the earth.", "A. taking place", "B. takes place", "C. take place", "D. they take place", 2, "that تعود على جمع.", "ضمير الوصل (that) يعود على كلمة (changes) وهي جمع، فنستخدم (take place)."], [68, 2, "A hero of the War of 1812, ______ President of the United States.", "A. Andrew Jackson later became", "B. that Andrew Jackson later became", "C. who was Andrew Jackson", "D. later became Andrew Jackson", 0, "البدل يحتاج فاعل.", "العبارة الأولى بدل، يجب أن يتبعها الفاعل مباشرة (Andrew Jackson)."], [69, 3, "The winter storm that <u>raced</u> <u>through</u> the area <u>for</u> the last <u>two day</u> moved east today.", "A. raced", "B. through", "C. for", "D. two day", 3, "بعد two يأتي جمع.", "كلمة two تدل على الجمع، لذا يجب أن يأتي بعدها اسم جمع (days)."], [70, 3, "In the 1800’s <u>botanist</u> Asa Gray <u>worked</u> to describe and <u>classifying</u> the plants <u>found</u> in North America.", "A. botanist", "B. worked", "C. classifying", "D. found", 2, "توازي مع to describe.", "قاعدة التوازي. الفعل معطوف على (to describe) فيجب أن يكون في المصدر (classify)."], [71, 3, "Bryce Canyon National Park, <u>where is there</u> <u>oddly shaped</u> and magnificently colored rock <u>formations</u>, is located in <u>southern</u> Utah.", "A. where is there", "B. oddly shaped", "C. formations", "D. southern", 0, "الترتيب الخاطئ.", "الترتيب الصحيح لعبارة الوصل هو (where there are) لأن الفاعل جمع."], [72, 3, "<u>After</u> <u>talks</u> in Copenhagen yesterday, <u>the</u> Secretary of State <u>returning</u> to Washington.", "A. After", "B. talks", "C. the", "D. returning", 3, "يوجد yesterday.", "الجملة تفتقر إلى فعل رئيسي في الماضي (returned)."], [73, 3, "Lava, <u>rock</u> fragments, and <u>gaseous</u> may <u>all</u> <u>erupt</u> from a volcano.", "A. rock", "B. gaseous", "C. all", "D. erupt", 1, "التوازي يتطلب اسم.", "قاعدة التوازي تتطلب اسماً ليتماشى مع الباقي. الصواب (gases)."], [74, 3, "<u>Many of</u> the characters <u>portrayed</u> by writer Joyce Carol Oates <u>is</u> <u>mentally ill</u>.", "A. Many of", "B. portrayed", "C. is", "D. mentally ill", 2, "الفاعل جمع.", "الفاعل (Many characters) جمع، الصواب (are)."], [75, 3, "<u>In additions to</u> serving as a member of the President’s Cabinet, the Attorney General is <u>the</u> <u>head</u> of the Justice Department.", "A. In additions to", "B. serving as", "C. the", "D. head", 0, "تعبير ثابت.", "المصطلح الثابت هو (In addition to) بدون s."], [76, 3, "The narwhal can be easily <u>to recognize</u> by the long <u>spiraled</u> tusk <u>attached to</u> the left side of <u>its</u> head.", "A. to recognize", "B. spiraled", "C. attached to", "D. its", 0, "مبني للمجهول.", "الجملة مبنية للمجهول (can be + V3). الصواب (recognized)."], [77, 3, "The <u>poet</u> Ogden Nash <u>often used</u> a <u>comic</u> style <u>to do</u> a serious point.", "A. poet", "B. often used", "C. comic", "D. to do", 3, "تعبير مع point.", "المصطلح لتوضيح وجهة نظر هو (make a point)."], [78, 3, "<u>Much</u> Civil War battles <u>were fought</u> in Virginia than in any <u>other</u> <u>state</u>.", "A. Much", "B. were fought", "C. other", "D. state", 0, "مقارنة بوجود than.", "وجود (than) يتطلب صفة مقارنة (More)."], [79, 3, "<u>It is</u> the role of the National Bureau of Standards to <u>establish</u> accurate <u>measurements</u> for science, <u>industrial</u>, and commerce.", "A. It is", "B. establish", "C. measurements", "D. industrial", 3, "توازي الأسماء.", "التوازي يتطلب اسماً (industry)."], [80, 3, "On February 20, 1962, “Friendship 7” <u>orbiting</u> the earth in a <u>manned</u> <u>flight</u> that lasted <u>just under</u> five hours.", "A. orbiting", "B. manned", "C. flight", "D. just under", 0, "جملة بدون فعل ماضي.", "الجملة تحتاج إلى فعل ماضي رئيسي (orbited)."], [81, 3, "<u>The</u> new system <u>responds</u> <u>at</u> seconds to <u>any</u> emergency.", "A. The", "B. responds", "C. at", "D. any", 2, "حرف جر المدة الزمنية.", "للتعبير عن المدة المستغرقة نستخدم حرف الجر (in)."], [82, 3, "<u>Most</u> newspapers depend <u>on</u> the wire services <u>from</u> their international <u>stories and photographs</u>.", "A. Most", "B. on", "C. from", "D. stories and photographs", 2, "حرف الجر المناسب للغرض.", "حرف الجر المناسب هنا هو (for) وليس from."], [83, 3, "<u>Studies</u> show <u>that</u> the new strategy is not <u>so</u> effective as the <u>previous</u> one.", "A. Studies", "B. that", "C. so", "D. previous", 2, "صيغة المساواة.", "في صيغة المساواة المنفية، يفضل استخدام (as... as). النموذج اعتبرها C."], [84, 3, "The two <u>types</u> of nucleic acids, <u>known</u> as DNA and RNA, <u>are</u> not <u>the alike</u>.", "A. types", "B. known", "C. are", "D. the alike", 3, "الصفة alike.", "الصفة alike لا تُسبق بـ the أبداً."], [85, 3, "<u>The</u> 1890’s <u>in</u> America were known <u>as</u> <u>a</u> Gay Nineties.", "A. The", "B. in", "C. as", "D. a", 3, "حقبة زمنية مشهورة.", "المصطلح التاريخي معرف بأل (the Gay Nineties)."], [86, 3, "The classification of a dinosaur <u>as either</u> saurischian <u>nor</u> ornithischian <u>depends</u> on the structure of <u>the hip</u>.", "A. as either", "B. nor", "C. depends", "D. the hip", 1, "الرابط المزدوج لـ either.", "الرابط المزدوج لـ either هو or."], [87, 3, "<u>An</u> octopus has three hearts <u>to pump</u> blood <u>throughout</u> <u>their</u> body.", "A. An", "B. to pump", "C. throughout", "D. their", 3, "إخطبوط مفرد.", "الضمير يجب أن يعود على مفرد غير عاقل (its)."], [88, 3, "Of <u>all the</u> states <u>in the</u> United States, Rhode Island <u>is</u> <u>a</u> smallest.", "A. all the", "B. in the", "C. is", "D. a", 3, "صيغة التفضيل.", "التفضيل الأعلى يتطلب أداة التعريف (the smallest)."], [89, 3, "Dorothea Dix worked <u>extensively</u> <u>during the</u> second half of the nineteenth century <u>to improve conditions</u> in mental health facilities and <u>the</u> prisons.", "A. extensively", "B. during the", "C. to improve conditions", "D. the", 3, "قاعدة التوازي بدون the.", "التوازي مع (mental health facilities) بدون the، الصواب (prisons)."], [90, 3, "Richard Gatling, an <u>invention</u> best known for the development of the Gatling Gun, <u>actually</u> put <u>most of</u> his effort into improving <u>agricultural</u> methods.", "A. invention", "B. actually", "C. most of", "D. agricultural", 0, "السياق عن عاقل.", "السياق عن شخص (مخترع)، الصواب (inventor)."], [91, 3, "<u>Almost</u> one-half of <u>those</u> taking <u>specialized</u> courses last year were taking self-improvement <u>course</u>.", "A. Almost", "B. those", "C. specialized", "D. course", 3, "الجمع.", "بما أننا نتحدث عن النصف، فالنصف يأخذون (courses)."], [92, 3, "The theory of natural selection <u>is used</u> to explain <u>which</u> animals of a species will die <u>prematurely</u> and which will <u>survival</u>.", "A. is used", "B. which", "C. prematurely", "D. survival", 3, "بعد will يأتي فعل.", "بعد will يجب أن يأتي الفعل في المصدر (survive)."], [93, 3, "Death Valley <u>is</u> 130 miles <u>length</u> and <u>no more</u> <u>than</u> 14 miles wide.", "A. is", "B. length", "C. no more", "D. than", 1, "قاعدة التوازي مع الصفة.", "التوازي يتطلب الصفة (long) لتتناسب مع (wide)."], [94, 4, "What is the author’s main purpose?", "A. To show what color algae is", "B. To differentiate the various classifications of algae", "C. To describe where algae is found", "D. To clarify the appearance of different types of algae", 1, "يركز على الأنواع.", "الغرض الرئيسي هو التفرقة بين تصنيفات الطحالب (differentiate).", 1], [95, 4, "Which of the following is NOT true about algae?", "A. All types have one cell only.", "B. It can be found out of water.", "C. It can use photosynthesis.", "D. It is not a relatively new form of life.", 0, "مذكور multiple-celled.", "ذكرت القطعة أن هناك أنواع وحيدة الخلية ومتعددة الخلايا.", 1], [96, 4, "The word “pigment” at the end of the first paragraph means", "A. Size", "B. Shape", "C. Composition", "D. Color", 3, "صبغة.", "تعني صبغة أو لون (Color).", 1], [97, 4, "Algae remnants found in Africa are", "A. Still flourishing", "B. Photogenic", "C. Extremely old", "D. Red in color", 2, "3.4 مليار سنة.", "بقايا عمرها 3.4 مليار سنة أي قديمة جداً (Extremely old).", 1], [98, 4, "Green algae is generally found", "A. On the ocean floor", "B. On top of the water", "C. Throughout ponds and lakes", "D. Surrounding enclosed bodies of water", 1, "على السطح.", "ذكرت القطعة أنها كطبقة على سطح الماء (On top of the water).", 1], [99, 4, "Brown algae would most likely be found", "A. On trees", "B. Near green algae", "C. On rocks", "D. In the ocean", 3, "قاع المحيط.", "تذكر القطعة أنها على قاع المحيط أو تطفو عليه.", 1], [100, 4, "According to the passage, red algae is", "A. Sturdy", "B. Huge", "C. Fragile", "D. Found in shallow water", 2, "رقيقة.", "القطعة تصفها بـ delicate أي هشة أو رقيقة (Fragile).", 1], [101, 4, "It can be inferred from the passage that limestone deposits serve as the basis of", "A. Coral reefs", "B. Red algae", "C. Subtropical seawater", "D. Secret passages", 0, "ترسبات الحجر.", "تساعد في تكوين الشعاب المرجانية (Coral reefs).", 1], [102, 4, "What is the subject of this passage?", "A. The increasing costs of malpractice insurance", "B. Factors causing the increase in U.S. medical bills", "C. Steps for Americans to take to obtain medical care", "D. The outrageous medical profession", 1, "عوامل زيادة التكلفة.", "تتحدث القطعة عن أسباب زيادة الفواتير الطبية.", 2], [103, 4, "According to the passage, how does the author of this passage feel about the tremendous increase in medical bills?", "A. Disquieted", "B. Enthusiastic", "C. Impassive", "D. Apathetic", 0, "قلق وغير مرتاح.", "الكاتب يستخدم كلمات مثل outrageously مما يدل على قلقه واستيائه (Disquieted).", 2], [104, 4, "Which of the following is NOT identified as a major factor contributing to the increase in medical costs?", "A. Malpractice insurance", "B. The cost of hospital care", "C. More conservative and expensive prescriptions", "D. Inflation", 3, "القطعة نفت التضخم.", "ذكرت القطعة أن الزيادة لا يمكن لوم التضخم (Inflation) عليها كلياً كعامل رئيسي مؤثر.", 2], [105, 4, "The passage implies that a slowing in inflation would have what kind of effect on medical costs?", "A. Tremendous", "B. Nonexistent", "C. Slight", "D. Maximum", 2, "تأثير ضعيف.", "بما أن الفواتير ترتفع بمعدل أعلى من التضخم، فتأثيره طفيف (Slight).", 2], [106, 4, "Which of the following is NOT stated in the passage concerning malpractice?", "A. The increase in malpractice insurance is due to inflation", "B. Malpractice insurance premiums are on the increase", "C. The increase in malpractice payouts has caused an increase in doctors’ bills", "D. High malpractice awards have caused doctors to work more conservatively", 0, "علاقة التأمين بالتضخم؟", "لم تذكر القطعة أن التضخم هو سبب زيادة تأمين الأخطاء الطبية.", 2], [107, 4, "What is the author’s main point in this passage?", "A. Inflation is having a terrible effect on medical bills", "B. Insurance companies are at fault in raising medical bills", "C. Action is needed to counteract increases in medical bills", "D. Doctors need to work to decrease malpractice", 2, "يجب اتخاذ إجراء.", "الكاتب يؤكد على الحاجة لاتخاذ خطوات قوية لعكس هذا المسار.", 2], [108, 4, "What does the paragraph following this passage most likely contain?", "A. A discussion of why the average American will soon be unable to afford medical care", "B. Forecasts of how inflation will influence medical care in the future", "C. The tremendous increases in malpractice insurance", "D. The steps the government could take to curb medical costs", 3, "خطوات الحكومة.", "القطعة انتهت بطلب اتخاذ إجراءات قوية، فالفقرة التالية ستناقش هذه الإجراءات.", 2], [109, 4, "What is the best title for the passage?", "A. Thomas Edison’s Many Inventions", "B. Improvements in the Telephone and Telegraph", "C. The History of Menlo Park", "D. A Surprise Invention", 3, "اختراع بالصدفة.", "بدأت القطعة بـ happened quite by accident أي اختراع مفاجئ.", 3], [110, 4, "According to the passage, the invention of the phonograph.............", "A. Was quite unplanned", "B. Was Edison’s principal project", "C. Was surprising to no one", "D. Took many years", 0, "حدث بالصدفة.", "غير مخطط له (unplanned) يعادل accident.", 3], [111, 4, "In what year did the invention of the phonograph occur?", "A. 1876", "B. 1877", "C. 1878", "D. The article does not say", 1, "سنة بعد 1876.", "انتقل 1876 وفي المعمل 'بعد عام' (a year later) اخترعه، أي 1877.", 3], [112, 4, "According to the passage, how was the phonograph made?", "A. With a telephone needle and a recorder", "B. From a recording of a telegraph", "C. With only a telegraph repeater", "D. From a combination of telephone and telegraph parts", 3, "أجزاء من هنا وهنا.", "ركب diaphragm للتليفون مع إبرة تلغراف.", 3], [113, 4, "According to the passage, how did Edison test his new invention?", "A. He made improvements to the machine", "B. He used a carbon transmitter", "C. He read a children’s rhyme", "D. He reproduced the audience’s voice", 2, "قرأ أغنية أطفال.", "قرأ 'Mary a Little Lamb' وهي قافية أطفال.", 3], [114, 4, "According to the passage, how did people feel when they heard Edison’s rendition of “Mary Had a Little Lamb”?", "A. Perplexed", "B. Amazed", "C. Aggravated", "D. Detached", 1, "مذهولين.", "استخدمت القطعة كلمة astonished وهي تعني Amazed.", 3], [115, 4, "Which of the following is the best topic for this passage?", "A. The Great Pueblo period", "B. A description of the Indian cliff dwellings", "C. What is known and unknown about the cliff dwellings", "D. The Four Corners area of the United States", 2, "المعروف والمجهول.", "القطعة تناقش ما نعرفه (موقعها وحجمها) وما نجهله (سبب هجرها).", 4], [116, 4, "Why did the Four Corners area receive its name?", "A. The area is a square with four corners", "B. The cliff dwellings in the area each have four corners", "C. The Great Pueblo are four-cornered", "D. The corners of four states meet there", 3, "أربع ولايات.", "حيث تلتقي ولايات كولورادو ويوتا وأريزونا ونيو مكسيكو.", 4], [117, 4, "According to the passage, what size were the sleeping chambers?", "A. Wide", "B. Small", "C. High", "D. Large", 1, "كانت tiny.", "غرف النوم كانت ضيقة جداً (Small).", 4], [118, 4, "According to the passage, when were the cliff dwellings built?", "A. During the Great Pueblo period", "B. After the drought", "C. Sometime before 1050", "D. At the same time that the explorers found them", 0, "فترة بويبلو.", "بنيت خلال فترة Great Pueblo.", 4], [119, 4, "According to the passage, what were the cliff dwellings like when the explorers first found them?", "A. Thriving", "B. Full of daily life", "C. Empty", "D. In a state of drought", 2, "مهجورة.", "كانت abandoned أي فارغة (Empty).", 4], [120, 4, "According to the passage, what do archeologists believe caused the cliff dwellers to abandon their homes?", "A. A lack of food", "B. Warfare with neighboring tribes", "C. A desire to find a safer location", "D. A shortage of water", 3, "الجفاف.", "بسبب جفاف خطير (drought) أي نقص المياه.", 4], [121, 4, "According to the passage, which of the following are the authorities certain about?", "A. Why the cliff dwellers abandoned their homes", "B. That a drought occurred in the Four Corners area from 1276 to 1299", "C. Where the inhabitants of the cliff dwellings went", "D. When the cliff dwellers abandoned their homes", 1, "الأدلة تؤكد حدثاً معيناً.", "هناك أدلة مؤكدة على حدوث جفاف في تلك الفترة.", 4], [122, 4, "Which of the following is NOT discussed in the passage?", "A. The lifestyle of the cliff dwellers", "B. The size of the cliff dwellings", "C. The mystery surrounding the abandonment of the cliff dwellings", "D. The location of the cliff dwellings", 0, "نمط الحياة.", "لم تناقش القطعة تفاصيل نمط حياتهم اليومي.", 4], [123, 4, "The first sentence of the passage means that the rate of interest paid on the loans by students is", "A. exactly 9 per cent.", "B. between 1 and 9 per cent.", "C. 9 per cent or more.", "D. Sometimes more and sometimes less", 0, "محدد بـ 9.", "يقول النص '9 per cent loans' أي بالضبط 9%.", 5], [124, 4, "The money for loans is given to the students by..................", "A. their colleges or universities.", "B. The national government.", "C. Their banks.", "D. Their families.", 2, "مباشرة من...", "النص يقول 'directly from banks to students'.", 5], [125, 4, "In recent years, use of G.S.L. funds by Bates College’s students has apparently increased...............", "A. hardly at all", "B. only a little", "C. rather steadily", "D. very greatly", 3, "7 أضعاف.", "نمت أكثر من 7 أضعاف (sevenfold) أي بشكل كبير جداً.", 5], [126, 4, "According to the passage, one important reason for the recent trend in the use of such loans is the fact that.............", "A. The number of students has been gradually declining.", "B. The cost of a university education has been steadily increasing.", "C. The banks are trying to reduce this kind of business", "D. Many students have been earning much better grades than before.", 1, "تكلفة التعليم.", "بسبب التكلفة المتزايدة للتعليم (increasing cost of education).", 5], [127, 4, "Another important reason for the recent trend in the use of G.S.L.s is..........................", "A. a decline in the availability of bank loan money.", "B. an increase in the availability of bank loan money.", "C. a decline in the ability of the average American family to pay.", "D. an increase in the ability of the average American family to pay.", 2, "انكماش الدخل.", "بسبب انكماش الدخل المتاح للأسرة، أي انخفاض قدرتهم على الدفع.", 5], [128, 4, "According to the article, the increase in the rate of inflation in the U.S. economy over the previous decade was..................", "A. much greater than that in the cost of a college education.", "B. only a little greater than that in the cost of a college education.", "C. about the same as that in the cost of a college education.", "D. somewhat less than that in the cost of a college education.", 2, "ليست أكبر من...", "يقول النص 'no greater than the inflation rate' أي تقريباً متساوية.", 5], [129, 4, "What does the article say about students unable to pay for their education at American colleges?", "A. The colleges tried to increase the number of such students.", "B. The colleges stopped accepting such students.", "C. The colleges tried to keep such students in their student bodies.", "D. The colleges have never had such students in their student bodies.", 2, "القبول بغض النظر عن الدفع.", "الكليات تحاول قبول الطلاب بغض النظر عن قدرتهم على الدفع.", 5], [130, 4, "The reason for Bates College’s policy on poor students is that college officials believe that students who cannot afford a college education......................", "A. are an impossible burden to any college.", "B. should not be denied the opportunity of a college education if they are academically able.", "C. should not attempt to apply to Bates College for a free education.", "D. are unfairly trying to take the place of better qualified students", 1, "فرصة التعليم.", "الكليات تقبلهم رغبة في عدم حرمانهم من الفرصة.", 5], [131, 4, "The passage makes clear that the scholarship money which Bates College has comes mainly from.........................", "A. The national government.", "B. The local community’s private banks.", "C. The personal contribution of private citizens.", "D. The tuition paid to the college by its student body.", 2, "تبرعات خاصة.", "صندوق المنح يأتي من تبرعات خاصة (private donations).", 5], [132, 4, "Bates College’s scholarship fund has increased over the past decade at a rate.......................", "A. a bit lower than the rate of inflation.", "B. a bit faster than the rate of inflation.", "C. much lower than the rate of inflation.", "D. much faster than the rate of inflation.", 3, "من 254 ألف إلى 1.4 مليون.", "زيادة ضخمة جداً، أسرع بكثير من التضخم.", 5], [133, 4, "How could the Finger Lakes be described?", "A. As basically circular", "B. As all the same size", "C. As tiny", "D. As long and thin", 3, "طويلة وضيقة.", "توصف بـ long, narrow أي طويلة وضيقة.", 6], [134, 4, "What do most scientists believe caused the formation of the Finger Lakes?", "A. The sea level decreased", "B. Heavy rainfalls flooded the area", "C. The melted glaciers carved out the valleys", "D. Glaciers cut into the land and then melted to fill the valleys", 3, "نحتت ثم ذابت.", "الجليد نحت الوديان ومع ذوبانه تشكلت البحيرات.", 6], [135, 4, "According to the passage, why are these lakes known as Finger Lakes?", "A. They are the same size as fingers", "B. Their shape is similar to a finger’s", "C. Their composition is the same as a finger’s", "D. There are as many lakes as there are fingers", 1, "تشبه الأصابع.", "بسبب تشابهها (resemblance) مع أصابع اليد.", 6], [136, 4, "Why does the author mention Seneca and Cayuga Lakes?", "A. They are the only two Finger Lakes", "B. They are the two largest lakes in the United States", "C. They are good examples of long and narrow Finger Lakes", "D. They are long and wide", 2, "أمثلة لتوضيح التسمية.", "يستخدمها كأمثلة (exemplify) لتبرير شكل البحيرات.", 6], [137, 4, "The passage implies that Seneca Lake is", "A. A constant 4 miles wide", "B. At least 4 miles wide at each point", "C. Wider than it is long", "D. Narrower than 4 miles at certain points", 3, "4 ميل في أعرض نقطة.", "<span class='text-red-600 font-bold'>إجابة الكتاب الرسمية هي D. </span> عرضها 4 أميال في أعرض نقطة، مما يعني حتماً أنها أضيق في نقاط أخرى. إذا تم حسابها خطأ في الامتحان، فهو خطأ في برمجتهم.", 6], [138, 4, "The main subject of the passage is............................", "A. Melville’s travels", "B. The popularity of Melville’s novels", "C. Melville’s personal background", "D. Moby Dick", 1, "شعبية رواياته.", "<span class='text-red-600 font-bold'>تنبيه: إجابات الكتاب للأسئلة من 138 لـ 143 كلها بها أخطاء.</span> إجابة الكتاب الرسمية لـ 138 هي D (Moby Dick) ولكن الإجابة العلمية الصحيحة B.", 7], [139, 4, "According to the passage, Melville’s early novels were..............", "A. Published while he was traveling", "B. Completely fictional", "C. All about his work on whaling ships", "D. Based on his travels", 3, "مبنية على أسفاره.", "وفقاً لنموذج الإجابات، الإجابة المعتمدة D (مبنية على أسفاره).", 7], [140, 4, "In what year did Melville’s book about his experience as a cabin boy appear?", "A. 1837", "B. 1841", "C. 1847", "D. 1849", 0, "نموذج الكتاب فيه خطأ.", "<span class='text-red-600 font-bold'>الإجابة الصحيحة علمياً D (1849)</span> ولكن نموذج إجابات الكتاب اختار بالخطأ A (1837) والتي تمثل سنة سفره وليس سنة النشر. لكي تحصل على الدرجة في الامتحان اختر A.", 7], [141, 4, "The passage implies that Melville stayed in Tahiti because...........................", "A. He had unofficially left his ship", "B. He was on leave while his ship was in port", "C. He had finished his term of duty", "D. He had received permission to take a vacation in Tahiti", 2, "ترك السفينة.", "<span class='text-red-600 font-bold'>الإجابة الصحيحة علمياً A (jumping ship)</span> ولكن نموذج الكتاب اختار بالخطأ C. اختر C للحصول على الدرجة.", 7], [142, 4, "How did the publication of Moby Dick affect Melville’s popularity?", "A. His popularity increased immediately", "B. It had no effect on his popularity", "C. It caused his popularity to decrease", "D. His popularity remained as strong as ever", 3, "شعبيته انخفضت.", "<span class='text-red-600 font-bold'>الإجابة الصحيحة علمياً C (diminish/decrease)</span> ولكن نموذج الكتاب المترهل اختار D. للحصول على الدرجة اختر D.", 7], [143, 4, "According to the passage, Moby Dick....................", "A. Is a romantic adventure", "B. Is a single-faceted work", "C. Is a short story about a whale", "D. Is symbolic of man fighting his environment", 1, "رمزية للصراع.", "<span class='text-red-600 font-bold'>الإجابة الصحيحة علمياً D</span> ولكن نموذج الكتاب اختار B. للحصول على الدرجة اختر B.", 7]];
+        
+        const passages = {
+            1: "Algae is a primitive form of life, a single-celled or simple multiple-celled organism that is able to conduct the process of photosynthesis. It is generally found in water but can also be found elsewhere, growing on such surfaces as rocks or trees. The virus types of algae are classified according to pigment.",
+            2: "Medical bills in the United States have risen outrageously since the beginning of the 1960’s, and steps need to be taken to reverse this trend or the average American will not be able to afford medical care...",
+            3: "The invention of phonograph happened quite by accident. Thomas Edison moved to Menlo Park, New Jersey, in 1876, where he established an industrial research laboratory...",
+            4: "The Indian cliff dwellings of the southwestern United States are a source of interest and mystery for archeologists. Located in the Four Corners area of the U.S., where Colorado, Utah, Arizona, and New Mexico meet...",
+            5: "The U.S. Guaranteed student Loan authority provides federally subsidized 9 per cent loans directly from banks to students. The dependence of Bates College’s student body on G.S.L. funds has grown more than sevenfold...",
+            6: "In west-central New York State there is a group of eleven long, narrow lakes known as the Finger Lakes. These lakes have been aptly named because of their resemblance to the fingers of a hand...",
+            7: "Herman Melville, an American author best known today for his novel Moby Dick, was actually more popular during his lifetime for some of his other works. He traveled extensively..."
+        };
+
+        const sectionNames = { 1: "Vocabulary", 2: "Structure (Part A)", 3: "Structure (Part B)", 4: "Reading Comprehension" };
+        
+        let currentIdx = 0;
+        let userAnswers = new Array(rawData.length).fill(null);
+        let sectionScores = { 1: {c:0, t:0}, 2: {c:0, t:0}, 3: {c:0, t:0}, 4: {c:0, t:0} };
+
+        // Initialize UI
+        document.getElementById('totalQCount').textContent = rawData.length;
+        document.getElementById('qTotal').textContent = rawData.length;
+
+        function startQuiz() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('hidden');
+            document.getElementById('quizScreen').classList.add('flex');
+            loadQuestion(0);
+        }
+
+        function loadQuestion(idx) {
+            currentIdx = idx;
+            const q = rawData[idx];
+            
+            // Update Header
+            document.getElementById('qCurrent').textContent = idx + 1;
+            document.getElementById('progressBar').style.width = `${((idx + 1) / rawData.length) * 100}%`;
+            document.getElementById('sectionBadge').textContent = sectionNames[q[1]];
+            
+            // Handle Passage
+            const passContainer = document.getElementById('passageContainer');
+            if (q[1] === 4) {
+                passContainer.classList.remove('hidden');
+                passContainer.classList.add('block');
+                document.getElementById('passageText').textContent = passages[q[10]];
+            } else {
+                passContainer.classList.add('hidden');
+                passContainer.classList.remove('block');
+            }
+
+            // Question Text
+            document.getElementById('questionText').innerHTML = q[2];
+            
+            // Options
+            const optsContainer = document.getElementById('optionsContainer');
+            optsContainer.innerHTML = '';
+            
+            const options = [q[3], q[4], q[5], q[6]];
+            options.forEach((optText, i) => {
+                const btn = document.createElement('button');
+                btn.className = `opt-btn w-full text-left dir-ltr p-4 rounded-xl border-2 border-slate-200 bg-white font-medium text-slate-700 shadow-sm block`;
+                btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-slate-100 text-slate-600 text-center leading-8 mr-3 font-bold pointer-events-none">${String.fromCharCode(65+i)}</span> ${optText.substring(3)}`;
+                btn.onclick = () => handleAnswer(i);
+                
+                // Restore state if answered
+                if (userAnswers[idx] !== null) {
+                    btn.disabled = true;
+                    if (i === q[7]) {
+                        btn.classList.add('correct', 'border-green-500', 'bg-green-50');
+                        btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-green-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none"><i class="fa-solid fa-check"></i></span> ${optText.substring(3)}`;
+                    } else if (i === userAnswers[idx]) {
+                        btn.classList.add('wrong', 'border-red-400', 'bg-red-50');
+                        btn.innerHTML = `<span class="inline-block w-8 h-8 rounded bg-red-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none"><i class="fa-solid fa-xmark"></i></span> ${optText.substring(3)}`;
+                    }
+                }
+                optsContainer.appendChild(btn);
+            });
+
+            // Hint
+            document.getElementById('hintBox').classList.add('hidden');
+            document.getElementById('hintText').textContent = q[8];
+            document.getElementById('hintBtn').style.display = (userAnswers[idx] === null && q[8]) ? 'flex' : 'none';
+
+            // Explanation
+            const expBox = document.getElementById('explanationBox');
+            if (userAnswers[idx] !== null) {
+                showExplanation(userAnswers[idx] === q[7]);
+            } else {
+                expBox.classList.add('hidden');
+            }
+
+            // Buttons
+            document.getElementById('prevBtn').disabled = (idx === 0);
+            
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+            
+            if (idx === rawData.length - 1) {
+                nextBtn.classList.add('hidden');
+                if (userAnswers[idx] !== null) finishBtn.classList.remove('hidden');
+                else finishBtn.classList.add('hidden');
+            } else {
+                finishBtn.classList.add('hidden');
+                if (userAnswers[idx] !== null) nextBtn.classList.remove('hidden');
+                else nextBtn.classList.add('hidden');
+            }
+        }
+
+        function toggleHint() {
+            const h = document.getElementById('hintBox');
+            h.classList.toggle('hidden');
+        }
+
+        function handleAnswer(selectedIndex) {
+            const q = rawData[currentIdx];
+            userAnswers[currentIdx] = selectedIndex;
+            
+            const isCorrect = (selectedIndex === q[7]);
+            
+            // Record stats
+            sectionScores[q[1]].t++;
+            if (isCorrect) sectionScores[q[1]].c++;
+
+            // Update UI
+            const buttons = document.getElementById('optionsContainer').children;
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].disabled = true;
+                if (i === q[7]) {
+                    buttons[i].classList.add('correct');
+                    buttons[i].querySelector('span').innerHTML = '<i class="fa-solid fa-check"></i>';
+                    buttons[i].querySelector('span').className = "inline-block w-8 h-8 rounded bg-green-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none";
+                } else if (i === selectedIndex) {
+                    buttons[i].classList.add('wrong');
+                    buttons[i].querySelector('span').innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    buttons[i].querySelector('span').className = "inline-block w-8 h-8 rounded bg-red-500 text-white text-center leading-8 mr-3 font-bold pointer-events-none";
+                }
+            }
+
+            document.getElementById('hintBtn').style.display = 'none';
+            document.getElementById('hintBox').classList.add('hidden');
+            showExplanation(isCorrect);
+            
+            if (currentIdx === rawData.length - 1) {
+                document.getElementById('finishBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('nextBtn').classList.remove('hidden');
+            }
+        }
+
+        function showExplanation(isCorrect) {
+            const expBox = document.getElementById('explanationBox');
+            const expTitle = document.getElementById('expTitle');
+            const expIcon = document.getElementById('expIcon');
+            const q = rawData[currentIdx];
+
+            expBox.classList.remove('hidden', 'exp-success', 'exp-error');
+            
+            if (isCorrect) {
+                expBox.classList.add('exp-success');
+                expTitle.textContent = "إجابة صحيحة!";
+                expTitle.className = "font-bold text-lg text-green-700";
+                expIcon.className = "fa-solid fa-circle-check text-green-600 ml-2 text-xl";
+            } else {
+                expBox.classList.add('exp-error');
+                expTitle.textContent = "إجابة خاطئة!";
+                expTitle.className = "font-bold text-lg text-red-700";
+                expIcon.className = "fa-solid fa-circle-xmark text-red-600 ml-2 text-xl";
+            }
+            
+            document.getElementById('explanationText').innerHTML = q[9];
+        }
+
+        function changeQuestion(step) {
+            if (currentIdx + step >= 0 && currentIdx + step < rawData.length) {
+                loadQuestion(currentIdx + step);
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizScreen').classList.remove('flex');
+            document.getElementById('quizScreen').classList.add('hidden');
+            
+            const resScreen = document.getElementById('resultScreen');
+            resScreen.classList.remove('hidden');
+            resScreen.classList.add('flex');
+
+            let totalCorrect = 0;
+            for(let key in sectionScores) totalCorrect += sectionScores[key].c;
+            
+            document.getElementById('finalScore').textContent = totalCorrect;
+            document.getElementById('finalTotal').textContent = rawData.length;
+
+            let percentage = (totalCorrect / rawData.length) * 100;
+            const icon = document.getElementById('resultIcon');
+            const msg = document.getElementById('resultMsg');
+            
+            if(percentage >= 80) {
+                icon.className = "w-24 h-24 rounded-full flex items-center justify-center mb-6 text-5xl shadow-lg bg-green-100 text-green-600";
+                icon.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+                msg.textContent = "ممتاز! أداء رائع يا بطل 🚀";
+                msg.className = "text-2xl font-bold mb-2 text-green-700";
+            } else if (percentage >= 50) {
+                icon.className = "w-24 h-24 rounded-full flex items-center justify-center mb-6 text-5xl shadow-lg bg-amber-100 text-amber-600";
+                icon.innerHTML = '<i class="fa-solid fa-thumbs-up"></i>';
+                msg.textContent = "جيد جداً، لكن تقدر تعمل أحسن! 👍";
+                msg.className = "text-2xl font-bold mb-2 text-amber-700";
+            } else {
+                icon.className = "w-24 h-24 rounded-full flex items-center justify-center mb-6 text-5xl shadow-lg bg-red-100 text-red-600";
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                msg.textContent = "محتاج تدريب ومراجعة أكتر 📚";
+                msg.className = "text-2xl font-bold mb-2 text-red-700";
+            }
+
+            // Breakdown
+            const vTotal = sectionScores[1].t;
+            const sTotal = sectionScores[2].t + sectionScores[3].t;
+            const rTotal = sectionScores[4].t;
+            
+            document.getElementById('scoreVocab').textContent = `${sectionScores[1].c}/${vTotal}`;
+            document.getElementById('scoreStruct').textContent = `${(sectionScores[2].c + sectionScores[3].c)}/${sTotal}`;
+            document.getElementById('scoreRead').textContent = `${sectionScores[4].c}/${rTotal}`;
+
+            // Feedback
+            let advice = "<strong>نصائح للمراجعة:</strong><br>";
+            if (sectionScores[1].c / vTotal < 0.6) advice += "- قسم الكلمات (Vocab) محتاج حفظ ومراجعة أكتر للمترادفات.<br>";
+            if ((sectionScores[2].c + sectionScores[3].c) / sTotal < 0.6) advice += "- راجع قواعد الجرامر وخصوصاً قاعدة التوازي والروابط (Structure).<br>";
+            if (sectionScores[4].c / rTotal < 0.6) advice += "- محتاج تدرب نفسك على القراءة السريعة واستنتاج المعنى من السياق (Reading).<br>";
+            
+            if (advice === "<strong>نصائح للمراجعة:</strong><br>") advice = "أداؤك متوازن وممتاز في كل الأقسام! استمر على نفس المستوى.";
+            
+            document.getElementById('feedbackText').innerHTML = advice;
+        }
+    </script>
+</body>
+</html>
